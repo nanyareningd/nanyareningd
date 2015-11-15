@@ -1,0 +1,3792 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+        <title>寂寞先生</title>
+        <description>寂寞先生 - 陈佳伟</description>
+        <link>http://enml.github.io/blog</link>
+        <link>http://enml.github.io/blog</link>
+        <lastBuildDate>2014-09-17T22:02:13+08:00</lastBuildDate>
+        <pubDate>2014-09-17T22:02:13+08:00</pubDate>
+        <ttl>1800</ttl>
+
+
+        <item>
+                <title>javascript代码规范</title>
+                <description>&lt;h1&gt;javascript代码规范&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;今天看了别人的文章后才发现以前自己写的代码很不规范，对于后期维护以及团队合作将是一个噩耗，所以总结了以下的一些规范规则，希望以后的代码能更优雅一点。&lt;/p&gt;
+
+&lt;h2&gt;命名规则&lt;/h2&gt;
+
+&lt;h3&gt;变量命名：加一个类型前缀&lt;/h3&gt;
+
+&lt;blockquote&gt;&lt;p&gt;s：表示字符串。例如：sName，sHtml；
+n：表示数字。例如：nPage，nTotal；
+b：表示逻辑。例如：bChecked，bHasLogin；
+a：表示数组。例如：aList，aGroup；
+r：表示正则表达式。例如：rDomain，rEmail；
+f：表示函数。例如：fGetHtml，fInit；
+o：表示以上未涉及到的其他对象，例如：oButton，oDate；
+g：表示全局变量，例如：gUserName，gLoginTime；
+大写字母开头的函数：表示构造函数，例如：function Super(){};
+大写字母的变量：表示静态常量，例如：PI&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;为什么需要这样强制定义变量前缀？正式因为javascript是弱语言造成的。在定义大量变量的时候，我们需要很明确的知道当前变量是什么属性，如果只通过普通单词，是很难区分的。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//普通代码
+var checked = false;
+var check = function() {
+    return true;
+}
+/**
+some code
+**/
+
+if(check) {//已经无法很确切知道这里是要用checked还是check()从而导致逻辑错误
+    //do some thing
+}
+
+//规范后代码
+var bChecked = false;
+var fnCheck = function() {
+    return true;
+}
+/**
+some code
+**/
+
+if(bChecked) {
+    // do some thing
+}
+if(fnCheck()) {
+    // do other thing
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;函数命名：动词+名词&lt;/h3&gt;
+
+&lt;p&gt;统一使用动词或者动词+名词形式，例如：fnGetVersion()，fnSubmitForm()，fnInit()；涉及返回逻辑值的函数可以使用is，has，contains等表示逻辑的词语代替动词，例如：fnIsObject()，fnHasClass()，fnContainsElment()。
+如果有内部函数，使用_fn+动词+名词形式，内部函数必需在函数最后定义。例如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function fnGetNumber(nTotal) {
+    if (nTotal &amp;lt; 100) {
+        nTotal = 100;
+    }
+    return _fnAdd(nTotal);
+ 
+    function _fnAdd(nNumber) {
+        nNumber++;
+        return nNumber;
+    }
+}
+alert(fGetNumber(10)); //alert 101
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;构造函数的面向对象写法&lt;/h2&gt;
+
+&lt;p&gt;上一篇文章讲到构造函数以及自身属性跟prototype属性的区别，里面的例子是采用内部定义私有属性加prototype定义共享属性的形式，代码如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var fnSuper = function (sName,aList,sColor,nAge) {
+        this.name = sName;
+        this.list = aList;
+        this.color = sColor;
+        this.age = nAge;
+};
+fnSuper.prototype.aNewList = [1,1,1,1];
+
+    var oSuper1 = new fnSuper(&quot;super1&quot;,[2,2,2,2]);
+    var fnSub = function () {};
+    fnSub.prototype = new fnSuper(&quot;sub&quot;,[3,3,3,3]);//继承。只能在这里绑定数据，没办法对sub1绑定。下面例子可以解决这个问题
+
+    var oSub1 = new fnSub();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;对于上面的代码，总体来说没什么原则性错误，无伤大雅；但我们需要分别在两个地方初始化变量，代码一多维护困难度会急剧增大。因此我们可以使用类似于面向对象语言中的Class写法：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+var fnSuper = function () {};
+fnSuper.prototype = {
+    init: function (sName,aList,sColor=&quot;green&quot;,nAge=&quot;18&quot;) {
+        this.name = sName;
+        this.list = aList;
+        this.color = sColor;
+        this.age = nAge;
+    },
+    aNewList:[1, 1, 1, 1]
+}//把初始化集中在一个地方，又能实现上面例子的功能
+
+var oSuper1 = new fnSuper();
+oSuper1.init(&quot;super1&quot;,[2,2,2,2]);
+oSuper1.list.push(2);//修改oSuper1的list
+console.log(oSuper1.list);//[2,2,2,2,2]
+var oSuper2 = new fnSuper();
+oSuper2.init(&quot;oSuper2&quot;,[1,1,1,1]);//通过init进行数据绑定
+oSuper2.list;//[1,1,1,1]，不会被上面的oSuper1影响，也就是说实现了数据的绑定
+
+var fnSub = function(){};
+fnSub.prototype = new fnSuper();
+var oSub1 = new fnSub();
+oSub1.init(&quot;sub1&quot;,[1],21);//我们试图跳过sColor直接给nAge赋值，但失败了
+oSub1.color;//&quot;21&quot;,也就是说我们无法跳过中间参数
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样把初始化集中在了prototype里面，又能给instance绑定数据，甚至可以instance的instance绑定数据，比如上例中的sub1和sub2。写到这里我们又发现了另一个问题，就是初始化需要的参数很多，我们在初始化时必须严格按照位置进行参数传入，这种参数叫做位置参数；位置参数可以忽略后面的参数，但不允许你跳过中间的参数；所以很多时候参数一多就容易出错。因此我们可以改写成一下的形式：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var fnSuper = function () {};
+fnSuper.prototype = {
+    init: function (oOption) {//把参数集中在一个object里面
+        this.name = oOption.sName;
+        this.list = oOption.aList;
+        this.color = oOption.sColor;
+        this.age = oOption.nAge;
+    },
+    aNewList:[1, 1, 1, 1]
+}
+
+var oSuper1 = new fnSuper();
+oSuper1.init({
+    sName:&quot;super1&quot;,
+    aList:[1,2,3],
+    nAge:20
+});
+oSuper1.age;//20；
+oSuper1.color;//undefined;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这种方式使我们可以通过命名参数进行赋值，减少出错，而且可以跳过中间的参数，因为命名参数本来就跟位置无关。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/07/04/js-code_optimize</link>
+                <guid>http://enml.github.io/blog/2014/07/04/js-code_optimize</guid>
+                <pubDate>2014-07-04T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript自身属性与原型属性</title>
+                <description>&lt;h1&gt;javascript自身属性与原型属性&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;最基本的构造函数与实例的关系：&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;var Sub = function () {
+    this.name = &quot;Super&quot;;
+    this.bra = [1, 2, 3];
+}
+var sub1 = new Sub();
+var sub2 = new Sub();
+sub1.name = &quot;new&quot;;
+alert(sub1.name);//&quot;new&quot;
+alert(sub2.name);//&quot;Super&quot;,说明了name不会被sub1影响
+sub1.bra.push(4);
+alert(sub1.bra);//[1,2,3,4]
+alert(sub2.bra);//[1,2,3]，说明引用类型array仍然不会被sub1影响
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;可以看出构造函数自身的属性（无论直接类型还是引用类型），都是赋值一份copy给它的所有instance，因此每一个instance 的修改互相不影响。我们继续看：&lt;/p&gt;
+
+&lt;h2&gt;自身属性和prototype属性的区别：&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;var Super = function () {
+    this.name = &quot;Super&quot;;
+    this.bra = [1, 2, 3];
+}
+Super.prototype.newBra = [1,1,1,1];
+
+//创建Super的instance：①super1；②我们可以把Sub.prototype看成是Super的instance。
+var super1 = new Super();
+var Sub = function () {};
+Sub.prototype = new Super();//到这里我们可以看成 Sub.prototype和super1都是Super的instance
+
+var sub1 = new Sub();
+var sub2 = new Sub();
+
+//修改Super的`自身属性`
+Sub.prototype.bra.push(4);//不影响兄弟(super1)，但会影响自身的instance（sub1,sub2）
+alert(sub1.bra);//[1,2,3,4]
+alert(sub2.bra);//[1,2,3,4]
+alert(super1.bra);//[1,2,3] 构造函数`自身属性`是直接赋值给它的所有instance，也就是说Super本身的属性（name,bra，不管是直接类型还是引用类型）都是分别复制一份给super1和Sub.prototype，因此修改了Sub.prototype的属性（bra）并不会影响到super1。反之亦然。
+
+//修改Super的`prototype属性`
+Sub.prototype.newBra.push(2,2,2,2);
+sub1.newBra;//[1,1,1,1,2,2,2,2]
+super1.newBra;//[1,1,1,1,2,2,2,2];构造函数的prototype里的属性只是提供一个指针给所有的instance，因此修改了Sub.prototype的属性（newBra：引用类型）会影响到super1。修改Sub.prototype相当于是直接修改Super.prototype属性，因为它们通过原型链引用着同一个属性。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我们在来理清关于构造函数&lt;code&gt;自身属性&lt;/code&gt;和&lt;code&gt;prototype属性&lt;/code&gt;与instance之间的关系，先看图：&lt;/p&gt;
+
+&lt;p&gt;我们来总结一下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Sub.prototype 和 super1 都是通过 new Super()产生的，我们把它们两个叫做兄弟；同理sub1和sub2也是兄弟&lt;/li&gt;
+&lt;li&gt;&lt;ul&gt;
+&lt;li&gt;自身属性(图中a,B)：无论是直接类型还是引用类型，兄弟间互不影响，各自拥有一份父函数的copy。修改只是在自身作用域里修改。比如说③和⑤都是①的实例，都拥有①中所有属性的copy，修改③的属性相当于在③中修改，不会影响其他人。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var Super = function () {
+    this.name = &quot;Super&quot;;
+    this.bra = [1, 2, 3];
+}
+Super.prototype.newBra = [1,1,1,1];
+
+//创建Super的instance：①super1；②我们可以把Sub.prototype看成是Super的instance。
+var super1 = new Super();
+var Sub = function () {};
+Sub.prototype = new Super();//到这里我们可以看成 Sub.prototype和super1都是Super的instance
+
+var sub1 = new Sub();
+var sub2 = new Sub();
+
+//修改Super的`自身属性`
+Sub.prototype.bra.push(4);//不影响兄弟(super1)，但会影响自身的instance（sub1,sub2）
+alert(sub1.bra);//[1,2,3,4]
+alert(sub2.bra);//[1,2,3,4]
+alert(super1.bra);//[1,2,3] 构造函数`自身属性`是直接赋值给它的所有instance，也就是说Super本身的属性（name,bra，不管是直接类型还是引用类型）都是分别复制一份给super1和Sub.prototype，因此修改了Sub.prototype的属性（bra）并不会影响到super1。反之亦然。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;* prototype属性(图中XXXXX)：* 修改：比如说通过⑥去修改①的prototype的属性——sub1.newBra.push(2,2,2,2)，那么因为原型属性是引用而非复制，因此sub1.newBra.push(2,2,2,2) ==&amp;gt; Sub.prototype.newBra.push(2,2,2,2) ==&amp;gt; Super.prototype.newBra.push(2,2,2,2)，也就是sub1会沿着原型链一直查找到最终的Super.prototype，在Super.prototype里去修改newBra属性，因此原型链上所有引用了改属性的实例都会被影响。
+
+```
+var Super = function () {
+this.name = &quot;Super&quot;;
+this.bra = [1, 2, 3];
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;}
+Super.prototype.newBra = [1,1,1,1];&lt;/p&gt;
+
+&lt;p&gt;//创建Super的instance：①super1；②我们可以把Sub.prototype看成是Super的instance。
+var super1 = new Super();
+var Sub = function () {};
+Sub.prototype = new Super();//到这里我们可以看成 Sub.prototype和super1都是Super的instance&lt;/p&gt;
+
+&lt;p&gt;var sub1 = new Sub();
+var sub2 = new Sub();&lt;/p&gt;
+
+&lt;p&gt;//修改Super的&lt;code&gt;prototype属性&lt;/code&gt;
+Sub.prototype.newBra.push(2,2,2,2);
+sub1.newBra;//[1,1,1,1,2,2,2,2]
+super1.newBra;//[1,1,1,1,2,2,2,2];构造函数的prototype里的属性只是提供一个指针给所有的instance，因此修改了Sub.prototype的属性（newBra：引用类型）会影响到super1。修改Sub.prototype相当于是直接修改Super.prototype属性，因为它们通过原型链引用着同一个属性。
+    ```&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;* 覆写：假如我们不是修改属性，而是直接覆写属性，那么情况也会不一样：* instance方法重载：
+
+```
+var Super = function () {
+    this.name = &quot;Super&quot;;
+    this.bra = [1, 2, 3];
+}
+Super.prototype.newBra = [1,1,1,1];
+
+//创建Super的instance：①super1；②我们可以把Sub.prototype看成是Super的instance。
+var super1 = new Super();
+var Sub = function () {};
+Sub.prototype = new Super();//到这里我们可以看成 Sub.prototype和super1都是Super的instance
+
+var sub1 = new Sub();
+var sub2 = new Sub();
+
+sub1.newBra = [2,2,2,2];
+sub1.newBra;//[2,2,2,2]
+sub2.newBra;//[2,2,2,2]
+super1.newBra;//[1,1,1,1] super1不受影响，实例覆写方法只会在sub2.__proto__的作用域里添加此方法，而不会修改到Super.prototype的方法
+```
+
+由于是覆写而不是修改，因此不会沿着原型链查找，而是在当前的作用域里添加该属性，而原来原型链上的那个属性依然还在，不受影响。这就实现了方法的重载。
+
+* 完全覆写：假如是在Super.prototype里对newBra进行覆写，那么所有引用该属性的实例都将被影响。
+
+```
+var Super = function () {
+    this.name = &quot;Super&quot;;
+    this.bra = [1, 2, 3];
+}
+Super.prototype.newBra = [1,1,1,1];
+
+//创建Super的instance：①super1；②我们可以把Sub.prototype看成是Super的instance。
+var super1 = new Super();
+var Sub = function () {};
+Sub.prototype = new Super();//到这里我们可以看成 Sub.prototype和super1都是Super的instance
+
+var sub1 = new Sub();
+var sub2 = new Sub();
+
+Super.prototype.newBra = [2,2,2,2];
+sub1.newBra;//[2,2,2,2]
+sub2.newBra;//[2,2,2,2]
+super1.newBra;//[2,2,2,2]
+```
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/06/21/js-prototype-chaim</link>
+                <guid>http://enml.github.io/blog/2014/06/21/js-prototype-chaim</guid>
+                <pubDate>2014-06-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript构造函数与原型简介</title>
+                <description>&lt;h1&gt;javascript构造函数与原型简介&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;首先，这篇文章要讲的重点是原型。但要讲原型就必须讲构造函数，将构造函数就必须讲对象。首先来看看对象。&lt;/p&gt;
+
+&lt;h3&gt;新建一个对象的方法：&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;new Object:&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var newObj = new Object;
+newObj.name = &quot;keti&quot;;
+newObj.color = &quot;red&quot;;
+newObj.changeColor = function(color){
+    newObj.color = color;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;这种方法看上去很蠢，所以使用literal直接创建一个对象要优雅得多：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;literal（直接量）：&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var newObj = {
+    name: &quot;keti&quot;;
+    color: &quot;red&quot;;
+    changeColor: function(color){
+        newObj.color = color;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;使用literal来常见对象似乎很不错，比较直观，两个卷括号括起来就是个对象嘛，多清晰明了。但是如果你要创建一系列结构类似的对象，难道要这样一个个写吗？作为程序员我们的遵循的理念就是尽可能减少重复，也就是著名的DRY(Don&#39;t Repeat Youself)。所以我们是无法容忍这么愚蠢的事情发生的，因此就有了构造函数，跟类有点相似，但我们这里不讨论类。构造函数就是建立一个模板，不绑定数据，只提供架构，你只需把相关数据填充到模板里就可以生成一个新的对象了：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;构造函数：&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function NewObj(name,color){
+    this.name = name;
+    this.color = color;
+    this.changeColor = function(c){
+        this.color = c;
+    }
+}
+var newObj1 = new NewObj(&quot;keti&quot;,&quot;red&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上面代码中，&lt;code&gt;new&lt;/code&gt;是一个构造器，&lt;code&gt;NewObj&lt;/code&gt;是我们创建好的模板，填入数据，赋给变量newObj1，ok，新的对象就这样生成了。&lt;/p&gt;
+
+&lt;p&gt;说完构造函数，就不得不说原型了。&lt;/p&gt;
+
+&lt;h3&gt;原型&lt;/h3&gt;
+
+&lt;p&gt;原型是javascript里一个相当复杂的属性，那么我们先想想为什么要用原型呢？重新看看上面构造函数的例子，看上去很完美，但是假如我们现在想添加一个新的method，那怎么办？直接添加到构造函数里面？没错，这样是可以，但假如这个方法我们经常需要变动，比如说&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function NewObj(name,num){
+    this.name = name;
+    this.num = num;
+    this.changNum = function(c){
+        this.num = c;
+    }
+}
+var newObj1 = new NewObj(&quot;kemi&quot;,10);
+newObj1.changNum(100);
+newObj1.num; //很明显是100
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我现在想修改changNum()这个函数：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function NewObj(name,num){
+    this.name = name;
+    this.num = num;
+    this.changNum = function(c){
+        this.num = c*2;
+    }
+}
+newObj1.changNum(100);
+newObj1.num; //依然是100，也就是说这个对象并不受我们修改的模板影响到
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我们修改了构造函数里的属性和方法，就必须重新创建实例才能应用到新的修改。而原型出现了，它将改变这种情况，我们用原型来创建一个method：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function NewObj(name,num){
+    this.name = name;
+    this.num = num;
+}
+NewObj.prototype.changNum = function(c){
+        this.num = c;
+        }
+var newObj1 = new NewObj(&quot;kemi&quot;,10);
+newObj1.changNum(100);
+newObj1.num; //很明显是100
+NewObj.prototype.changNum = function(c){
+        this.num = c*2;
+        }//我们重新修改一下这个方法
+newObj1.changNum(100);
+newObj1.num; //变成200了。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;它生效了。因为构造函数创建实例的过程是直接给实例赋值，而不是引用，因此已经生成的实例是无法再从构造函数里获得更新的，而原型是引用，我们看图：&lt;/p&gt;
+
+&lt;h3&gt;原型链&lt;/h3&gt;
+
+&lt;p&gt;我们通过上图可以看到所有的实例都是引用了同一个prototype，它们共享了prototype里的所有变量和方法。事实上，javascript中，所有的对象都有一个原型对象（prototype），原型对象中有一个constructor属性指向包含prototype属性的函数，当访问一个对象的属性（包括方法）时，首先查找这个对象自身有没有该属性，如果没有就查找它的原型（也就是&lt;strong&gt;proto&lt;/strong&gt;指向的prototype对象），如果还没有就查找原型的原型（prototype也有它自己的&lt;strong&gt;proto&lt;/strong&gt;，prototype对象），依此类推一直找到 Object 为止。&lt;/p&gt;
+
+&lt;p&gt;这个属性查找机制事实上就是我们常说的&lt;code&gt;原型链&lt;/code&gt;。下面这张神一样的图就是原型链：&lt;/p&gt;
+
+&lt;h3&gt;construct&lt;/h3&gt;
+
+&lt;p&gt;正常情况下构造函数的prototype的constructor是构造函数本身，如下图：&lt;/p&gt;
+
+&lt;p&gt;但是，我们看代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var name = &quot;Globle&quot;;
+
+function NewObj(name, num) {
+    this.name = name;
+    this.num = num;
+}
+NewObj.prototype.changNum = function (c) {
+    this.num = c;
+}
+var a = new NewObj(&quot;fad&quot;, 100)
+console.log(a.constructor);//NewObj
+
+NewObj.prototype = {
+    age: this.name + &quot;enm&quot;
+};
+var b = new NewObj();
+b.age; //&quot;Globle&quot;
+console.log(b.constructor); //Object
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;很明显，当我们直接覆写prototype时，&lt;code&gt;b.constructor&lt;/code&gt;指向的是 Object，而不再是原来的NewObj。这一点需格外小心，当然，有一个很简单的解决办法，就是通过显式指定 &lt;code&gt;constructor: NewObj&lt;/code&gt;即可。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/06/20/js-prototype</link>
+                <guid>http://enml.github.io/blog/2014/06/20/js-prototype</guid>
+                <pubDate>2014-06-20T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript闭包</title>
+                <description>&lt;h1&gt;javascript闭包&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h3&gt;闭包&lt;/h3&gt;
+
+
+&lt;p&gt;官方对闭包的解释是：一个拥有许多变量和绑定了这些变量的环境的表达式（通常是一个函数），因而这些变量也是该表达式的一部分。闭包的特点：
+    &lt;br&gt;　　1.作为一个函数变量的一个引用，当函数返回时，其处于激活状态。
+    &lt;br&gt;　　2.一个闭包就是当一个函数返回时，一个没有释放资源的栈区。
+&lt;/p&gt;
+
+
+&lt;p&gt;我们来看下面的例子：&lt;/p&gt;
+
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt; 
+   function closure(){
+        var name = &quot;enm&quot;;
+        return {
+            getStr:function(){
+                return name;
+            }
+        }
+    }
+    var builder = new closure();
+    builder.name;//undefined
+    name;//undefined,这里是访问不了function的私有变量的
+    console.log(builder.getStr()); //返回了enm
+ &lt;/pre&gt;
+
+
+
+
+&lt;p&gt;上面构造了一个闭包，这个闭包都维持着对外部作用域的引用，因此不管在哪调用总是能够访问函数中的变量。在一个函数内部定义的函数，会将外部函数的活跃对象添加到自己的作用域链中，因此上面实例中通过内部函数能够访问外部函数的属性，这也是javascript模拟私有变量的一种方式。
+&lt;/p&gt;
+
+
+&lt;h3&gt;闭包经典问题&lt;/h3&gt;
+
+
+&lt;p&gt;我们来看看下面经典的例子：&lt;/p&gt;
+
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;   function timeManage() {
+        for (var i = 0; i &amp;lt; 5; i++) {
+            setTimeout(function() {
+                console.log(i);
+            },1000)
+        };
+    }
+
+&lt;/pre&gt;
+
+
+&lt;p&gt;上面的程序并没有按照我们预期的输入1-5的数字，而是5次全部输出了5。再来看一个示例：&lt;/p&gt;
+
+&lt;pre&gt;
+    
+function createClosure(){
+    var result = [];
+    for (var i = 0; i &amp;lt; 5; i++) {
+        result[i] = function(){
+            return i;
+        }
+    }
+    return result;
+}
+&lt;/pre&gt;
+
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;调用createClosure()[0]()返回的是5，createClosure()[4]()返回值仍然是5。原因我们最后再说，因为现在我自己的理解跟网上其他人的理解有出入。我们先来看看怎么解决。我们可以通过&lt;code&gt;匿名自执行函数表达式&lt;/code&gt;来强制返回预期的结果：&lt;/p&gt;
+
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt; function timeManage() {
+    for (var i = 0; i &amp;lt; 5; i++) {
+        (function(num) {
+            setTimeout(function() {
+                console.log(num);
+            }, 1000);
+        })(i);
+    }
+}
+ &lt;/pre&gt;
+
+
+
+
+&lt;p&gt;或者在闭包匿名函数中再返回一个匿名函数赋值：&lt;/p&gt;
+
+
+
+
+&lt;pre&gt; function timeManage() {
+    for (var i = 0; i &amp;lt; 10; i++) {
+        setTimeout((function(e) {
+            return function() {
+                console.log(e);
+            }
+        })(i), 1000)
+    }
+}
+//timeManager();输出1,2,3,4，5
+function createClosure() {
+    var result = [];
+    for (var i = 0; i &amp;lt; 5; i++) {
+        result[i] = function(num) {
+            return function() {
+                console.log(num);
+            }
+        }(i);
+    }
+    return result;
+}
+//createClosure()[1]()输出1；createClosure()[2]()输出2
+ &lt;/pre&gt;
+
+
+&lt;p&gt;我再尝试另一种方法：&lt;/p&gt;
+
+
+&lt;pre&gt;
+      function timeManage() {
+          function foo() {
+                console.log(i);
+            }
+        for (var i = 0; i &lt; 5; i++) {
+           foo()
+        };
+    }
+    timeManage();//输出1，2，3，4，5
+ &lt;/pre&gt;
+
+
+&lt;p&gt;无论是匿名包裹器还是通过嵌套匿名函数的方式，原理上都是将变量i的值复制给实参num，在匿名函数的内部又创建了一个用于返回num的匿名函数，这样每个函数都有了一个num的副本，互不影响了。而第三种方法是先定义函数，然后在for循环中直接调用函数，这也是一个闭包，也依然保持对外部变量i的访问，但是不会出现我们说的问题&lt;/p&gt;
+
+
+&lt;p&gt;所以，有人解释解释出现这个问题的原因是&lt;b&gt;由于作用域链机制的影响，闭包只能取得内部函数的最后一个值&lt;/b&gt;,这样说没有错，因为你执行完循环再调用函数，函数引用同一个i，那么结果肯定是最后修改的值5。但这样解释会让这个问题变得迷糊，因为其实本质上这个例子是通过setTimeout函数故意延迟了函数的执行，通过我第三种解决方法可以看出，假如每一次循环都能立即执行函数，那么是完全可以输出每一个i的正确值的。也就是说，其实这个问题的容易让人迷糊的原因是函数没有立即执行，而不能说是闭包产生的结果。&lt;/p&gt;
+
+
+&lt;h3&gt;闭包中的this&lt;/h3&gt;
+
+
+&lt;p&gt;闭包中的this 在闭包中使用this时要特别注意，稍微不慎可能会引起问题。通常我们理解this对象是运行时基于函数绑定的，全局函数中this对象就是window对象，而当函数作为对象中的一个方法调用时，this等于这个对象（TODO 关于this做一次整理）。由于匿名函数的作用域是全局性的，因此闭包的this通常指向全局对象window：&lt;/p&gt;
+
+
+&lt;pre&gt;
+var scope = &quot;global&quot;;
+var object = {
+    scope:&quot;local&quot;,
+    getScope:function(){
+        return function(){
+            return this.scope;
+        }
+    }
+}
+&lt;/pre&gt;
+
+
+
+
+&lt;p&gt;调用object.getScope()()返回值为global而不是我们预期的local，前面我们说过闭包中内部匿名函数会携带外部函数的作用域，那为什么没有取得外部函数的this呢？每个函数在被调用时，都会自动创建this和arguments，内部匿名函数在查找时，搜索到活跃对象中存在我们想要的变量，因此停止向外部函数中的查找，也就永远不可能直接访问外部函数中的变量了。总之，在闭包中函数作为某个对象的方法调用时，要特别注意，该方法内部匿名函数的this指向的是全局变量。 幸运的是我们可以很简单的解决这个问题，只需要把外部函数作用域的this存放到一个闭包能访问的变量里面即可：
+&lt;/p&gt;
+
+
+
+
+&lt;pre&gt; var scope = &quot;global&quot;;
+var object = {
+    scope:&quot;local&quot;,
+    getScope:function(){
+        var that = this;
+        return function(){
+            return that.scope;
+        }
+    }
+}
+ &lt;/pre&gt;
+
+
+
+
+&lt;p&gt;object.getScope()()返回值为local。&lt;/p&gt;
+
+
+
+
+&lt;p&gt;内存与性能 由于闭包中包含与函数运行期上下文相同的作用域链引用，因此，会产生一定的负面作用，当函数中活跃对象和运行期上下文销毁时，由于必要仍存在对活跃对象的引用，导致活跃对象无法销毁，这意味着闭包比普通函数占用更多的内存空间，在IE浏览器下还可能会导致内存泄漏的问题，如下：
+&lt;/p&gt;
+
+
+
+
+&lt;pre&gt;  function bindEvent(){
+    var target = document.getElementById(&quot;elem&quot;);
+    target.onclick = function(){
+        console.log(target.name);
+    }
+ }
+ &lt;/pre&gt;
+
+
+
+
+&lt;p&gt;上面例子中匿名函数对外部对象target产生一个引用，只要是匿名函数存在，这个引用就不会消失，外部函数的target对象也不会被销毁，这就产生了一个循环引用。解决方案是通过创建target.name副本减少对外部变量的循环引用以及手动重置对象：&lt;/p&gt;
+
+
+
+
+&lt;pre&gt;   function bindEvent(){
+    var target = document.getElementById(&quot;elem&quot;);
+    var name = target.name;
+    target.onclick = function(){
+        console.log(name);
+    }
+    target = null;
+ }
+ &lt;/pre&gt;
+
+
+
+
+&lt;p&gt;闭包中如果存在对外部变量的访问，无疑增加了标识符的查找路径，在一定的情况下，这也会造成性能方面的损失。解决此类问题的办法我们前面也曾提到过：尽量将外部变量存入到局部变量中，减少作用域链的查找长度。&lt;/p&gt;
+
+
+
+
+&lt;p&gt;总结：闭包不是javascript独有的特性，但是在javascript中有其独特的表现形式，使用闭包我们可以在javascript中定义一些私有变量，甚至模仿出块级作用域，但闭包在使用过程中，存在的问题我们也需要了解，这样才能避免不必要问题的出现。&lt;/p&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2014/06/14/js-closesure</link>
+                <guid>http://enml.github.io/blog/2014/06/14/js-closesure</guid>
+                <pubDate>2014-06-14T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript变量声明优先级</title>
+                <description>&lt;h1&gt;javascript变量声明优先级&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;上一篇post讲了javascript的作用域和hoisting，在里面我也提到了&lt;code&gt;function声明&lt;/code&gt;的优先级比&lt;code&gt;var声明&lt;/code&gt;高，也就意味着当两个同名变量同时被&lt;code&gt;function&lt;/code&gt;和&lt;code&gt;var&lt;/code&gt;声明时，&lt;code&gt;function&lt;/code&gt;声明会覆盖&lt;code&gt;var&lt;/code&gt;声明，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+alert(a);//输出：function a(){ alert(&#39;我是函数&#39;) }
+
+function a(){ alert(&#39;我是函数&#39;) }//
+var a = &#39;我是变量&#39;;
+
+alert(a);   //输出：&#39;我是变量&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这代码等效于：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+function a(){alert(&#39;我是函数&#39;)} 
+var a;    //hoisting
+alert(a);    //输出：function a(){ alert(&#39;我是函数&#39;) }
+a = &#39;我是变量&#39;;//赋值
+alert(a);   //输出：&#39;我是变量&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这短短的代码里面其实说明了两个问题：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;function声明的优先级高于var声明：第一个alert输出可以看出&lt;code&gt;var a;&lt;/code&gt;被&lt;code&gt;function a(){}&lt;/code&gt;覆盖掉了。&lt;/li&gt;
+&lt;li&gt;赋值优先于函数声明：第二个alert输出可以看出&lt;code&gt;a=&#39;我是变量&#39;&lt;/code&gt;又把&lt;code&gt;function a(){}&lt;/code&gt;覆盖掉了。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;&lt;strong&gt;把一个变量添加到作用域中除有很多方法&lt;/strong&gt;，如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;javascript语言预定义的，比如说this,arguments&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;formal parameter&lt;/code&gt;(也就是中文说的形参吧)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;var&lt;/code&gt;声明并赋值，比如说&lt;code&gt;var a = 10;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;var&lt;/code&gt;声明不赋值，比如说&lt;code&gt;var a;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;function&lt;/code&gt;声明，比如说&lt;code&gt;function a(){};&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;我们来看看他们之间的优先级：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;var声明并赋值&lt;/code&gt;优先级高于&lt;code&gt;function声明&lt;/code&gt;
+这个上面已经说了。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;function声明&lt;/code&gt;优先级高于&lt;code&gt;formal parameter&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function fnTest(a){
+    alert(a);
+    function a(){return &quot;我优先&quot;}
+}
+fnTest(100);//:function a(){return &quot;我优先&quot;}。可以看出function声明覆盖了`formal parameter`。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;formal parameter&lt;/code&gt;优先级高于&lt;code&gt;预定义变量&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function fnTest(arguments){
+    alert(arguments);
+}
+fnTest(100);//:100。说明`formal parameter`优先级比预定义的arguments高
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;对比以下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function fnTest(a){
+    alert(arguments);
+}
+fnTest(100);//:[Object Arguments] {0:100,length:1}。当没有冲突时输出便是预定义的arguments
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;formal parameter&lt;/code&gt;优先级高于&lt;code&gt;var声明不赋值&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function fnTest(a){
+    alert(a);
+    var a;
+}
+fnTest(100);//:100。很明显，不多说
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;预定义变量&lt;/code&gt;优先级高于 &lt;code&gt;var声明不赋值&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function fnTest(){
+    alert(arguments);
+    var arguments;
+}
+fnTest();//:[Object Arguments]。不是undefined，说明arguments没有被var声明覆盖
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;var声明不赋值&lt;/code&gt;优先级高于函数外部作用域的其他所有声明&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function fnTest(){
+    alert(fnTest);
+    var fnTest;
+}
+fnTest();//:undefined。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;对比如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function fnTest(){    //
+    alert(fnTest);    //    
+}    //
+fnTest();    //输出function fnTest(){alert(fnTest);}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这也正好印证了作用域链查找变量的方式：&lt;strong&gt;在局部作用域里查找（若找到则返回，不必往下继续查找） ==&gt; 在上一级作用域里查找... ==&gt; 直到全局作用域（若找不到则返回typeError）&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;最后看看下面的综合例子：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function fnTest(arguments){
+    alert(arguments);//function arguments(){return &quot;hello world&quot;}
+    var arguments = 99;
+    function arguments(){return &quot;hello world&quot;};
+    alert(arguments);//99
+}
+fnTest(100);
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/06/13/js-resolution</link>
+                <guid>http://enml.github.io/blog/2014/06/13/js-resolution</guid>
+                <pubDate>2014-06-13T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript作用域和声明提升</title>
+                <description>&lt;h1&gt;javascript作用域和声明提升&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;作用域和作用域链是javascript中非常重要的特性，对于他们的理解直接关系到对于整个javascript体系的理解，而闭包又是对作用域的延伸，也是在实际开发中经常使用的一个特性，实际上，不仅仅是javascript，在很多语言中都提供了闭包的特性。
+作用域&lt;/p&gt;
+
+&lt;p&gt;作用域是一个变量和函数的作用范围，javascript中函数内声明的所有变量在函数体内始终是可见的，在javascript中有全局作用域和局部作用域，但是没有块级作用域，局部变量的优先级高于全局变量，通过几个示例来了解下javascript中作用域的那些“潜规则”（这些也是在前端面试中经常问到的问题）。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;ol&gt;
+&lt;li&gt;变量声明提前
+示例1：&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var scope=&quot;global&quot;;
+function scopeTest(){
+    console.log(scope);
+    var scope=&quot;local&quot;  
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;scopeTest(); //undefined
+此处的输出是undefined，并没有报错，这是因为在前面我们提到的函数内的声明在函数体内始终可见，上面的函数等效于：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var scope=&quot;global&quot;;
+function scopeTest(){
+    var scope;
+    console.log(scope);
+    scope=&quot;local&quot;  
+}
+scopeTest(); //local
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意，如果忘记var，那么变量就被声明为全局变量了。
+2. 没有块级作用域
+和其他我们常用的语言不同，在Javascript中没有块级作用域：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function scopeTest() {
+    var scope = {};
+    if (scope instanceof Object) {
+        var j = 1;
+        for (var i = 0; i &amp;lt; 10; i++) {
+            //console.log(i);
+        }
+        console.log(i); //输出10
+    }
+    console.log(j);//输出1
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在javascript中变量的作用范围是函数级的，即在函数中所有的变量在整个函数中都有定义，这也带来了一些我们稍不注意就会碰到的“潜规则”：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var scope = &quot;hello&quot;;
+function scopeTest() {
+    console.log(scope);//①
+    var scope = &quot;no&quot;;
+    console.log(scope);//②
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在①处输出的值竟然是undefined，简直丧心病狂啊，我们已经定义了全局变量的值啊，这地方不应该为hello吗？其实，上面的代码等效于：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var scope = &quot;hello&quot;;
+function scopeTest() {
+    var scope;
+    console.log(scope);//①
+    scope = &quot;no&quot;;
+    console.log(scope);//②
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;声明提前、全局变量优先级低于局部变量，根据这两条规则就不难理解为什么输出undefined了。&lt;/p&gt;
+
+&lt;h3&gt;作用域链&lt;/h3&gt;
+
+&lt;p&gt;在javascript中，每个函数都有自己的执行上下文环境，当代码在这个环境中执行时，会创建变量对象的作用域链，作用域链是一个对象列表或对象链，它保证了变量对象的有序访问。
+作用域链的前端是当前代码执行环境的变量对象，常被称之为“活跃对象”，变量的查找会从第一个链的对象开始，如果对象中包含变量属性，那么就停止查找，如果没有就会继续向上级作用域链查找，直到找到全局对象中：&lt;/p&gt;
+
+&lt;p&gt;作用域链的逐级查找，也会影响到程序的性能，变量作用域链越长对性能影响越大，这也是我们尽量避免使用全局变量的一个主要原因。&lt;/p&gt;
+
+&lt;h3&gt;闭包&lt;/h3&gt;
+
+&lt;p&gt;基础概念
+作用域是理解闭包的一个前提，闭包是指在当前作用域内总是能访问外部作用域中的变量。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function createClosure(){
+    var name = &quot;jack&quot;;
+    return {
+        setStr:function(){
+            name = &quot;rose&quot;;
+        },
+        getStr:function(){
+            return name + &quot;:hello&quot;;
+        }
+    }
+}
+var builder = new createClosure();
+builder.setStr();
+console.log(builder.getStr()); //rose:hello
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上面的示例在函数中返回了两个闭包，这两个闭包都维持着对外部作用域的引用，因此不管在哪调用总是能够访问外部函数中的变量。在一个函数内部定义的函数，会将外部函数的活跃对象添加到自己的作用域链中，因此上面实例中通过内部函数能够访问外部函数的属性，这也是javascript模拟私有变量的一种方式。
+请输入图片描述
+注意：由于闭包会额外的附带函数的作用域（内部匿名函数携带外部函数的作用域），因此，闭包会比其它函数多占用些内存空间，过度的使用可能会导致内存占用的增加。&lt;/p&gt;
+
+&lt;p&gt;闭包中的变量
+在使用闭包时，由于作用域链机制的影响，闭包只能取得内部函数的最后一个值，这引起的一个副作用就是如果内部函数在一个循环中，那么变量的值始终为最后一个值。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    function timeManage() {
+        for (var i = 0; i &amp;lt; 5; i++) {
+            setTimeout(function() {
+                console.log(i);
+            },1000)
+        };
+    }
+    ```
+
+上面的程序并没有按照我们预期的输入1-5的数字，而是5次全部输出了5。再来看一个示例：
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;function createClosure(){
+    var result = [];
+    for (var i = 0; i &amp;lt; 5; i++) {
+        result[i] = function(){
+            return i;
+        }
+    }
+    return result;
+}
+```&lt;/p&gt;
+
+&lt;p&gt;调用createClosure()&lt;a href=&quot;&quot;&gt;0&lt;/a&gt;返回的是5，createClosure()&lt;a href=&quot;&quot;&gt;4&lt;/a&gt;返回值仍然是5。通过以上两个例子可以看出闭包在带有循环的内部函数使用时存在的问题：因为每个函数的作用域链中都保存着对外部函数（timeManage、createClosure）的活跃对象，因此，他们都引用着同一变量i，当外部函数返回值，此时的i值为5，因为内部的每个函数i的值为5。
+那么如何解决这个问题呢？我们可以通过匿名包裹器（匿名自执行函数表达式）来强制返回预期的结果：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function timeManage() {
+    for (var i = 0; i &amp;lt; 5; i++) {
+        (function(num) {
+            setTimeout(function() {
+                console.log(num);
+            }, 1000);
+        })(i);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;或者在闭包匿名函数中再返回一个匿名函数赋值：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function timeManage() {
+    for (var i = 0; i &amp;lt; 10; i++) {
+        setTimeout((function(e) {
+            return function() {
+                console.log(e);
+            }
+        })(i), 1000)
+    }
+}
+//timeManager();输出1,2,3,4，5
+function createClosure() {
+    var result = [];
+    for (var i = 0; i &amp;lt; 5; i++) {
+        result[i] = function(num) {
+            return function() {
+                console.log(num);
+            }
+        }(i);
+    }
+    return result;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;//createClosure()&lt;a href=&quot;&quot;&gt;1&lt;/a&gt;输出1；createClosure()&lt;a href=&quot;&quot;&gt;2&lt;/a&gt;输出2
+无论是匿名包裹器还是通过嵌套匿名函数的方式，原理上都是由于函数是按值传递，因此会将变量i的值复制给实参num，在匿名函数的内部又创建了一个用于返回num的匿名函数，这样每个函数都有了一个num的副本，互不影响了。&lt;/p&gt;
+
+&lt;p&gt;闭包中的this
+在闭包中使用this时要特别注意，稍微不慎可能会引起问题。通常我们理解this对象是运行时基于函数绑定的，全局函数中this对象就是window对象，而当函数作为对象中的一个方法调用时，this等于这个对象（TODO 关于this做一次整理）。由于匿名函数的作用域是全局性的，因此闭包的this通常指向全局对象window：
+&lt;code&gt;
+var scope = &quot;global&quot;;
+var object = {
+    scope:&quot;local&quot;,
+    getScope:function(){
+        return function(){
+            return this.scope;
+        }
+    }
+}
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;调用object.getScope()()返回值为global而不是我们预期的local，前面我们说过闭包中内部匿名函数会携带外部函数的作用域，那为什么没有取得外部函数的this呢？每个函数在被调用时，都会自动创建this和arguments，内部匿名函数在查找时，搜索到活跃对象中存在我们想要的变量，因此停止向外部函数中的查找，也就永远不可能直接访问外部函数中的变量了。总之，在闭包中函数作为某个对象的方法调用时，要特别注意，该方法内部匿名函数的this指向的是全局变量。
+幸运的是我们可以很简单的解决这个问题，只需要把外部函数作用域的this存放到一个闭包能访问的变量里面即可：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var scope = &quot;global&quot;;
+var object = {
+    scope:&quot;local&quot;,
+    getScope:function(){
+        var that = this;
+        return function(){
+            return that.scope;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;object.getScope()()返回值为local。&lt;/p&gt;
+
+&lt;p&gt;内存与性能
+由于闭包中包含与函数运行期上下文相同的作用域链引用，因此，会产生一定的负面作用，当函数中活跃对象和运行期上下文销毁时，由于必要仍存在对活跃对象的引用，导致活跃对象无法销毁，这意味着闭包比普通函数占用更多的内存空间，在IE浏览器下还可能会导致内存泄漏的问题，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; function bindEvent(){
+    var target = document.getElementById(&quot;elem&quot;);
+    target.onclick = function(){
+        console.log(target.name);
+    }
+ }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上面例子中匿名函数对外部对象target产生一个引用，只要是匿名函数存在，这个引用就不会消失，外部函数的target对象也不会被销毁，这就产生了一个循环引用。解决方案是通过创建target.name副本减少对外部变量的循环引用以及手动重置对象：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;  function bindEvent(){
+    var target = document.getElementById(&quot;elem&quot;);
+    var name = target.name;
+    target.onclick = function(){
+        console.log(name);
+    }
+    target = null;
+ }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;闭包中如果存在对外部变量的访问，无疑增加了标识符的查找路径，在一定的情况下，这也会造成性能方面的损失。解决此类问题的办法我们前面也曾提到过：尽量将外部变量存入到局部变量中，减少作用域链的查找长度。&lt;/p&gt;
+
+&lt;p&gt;总结：闭包不是javascript独有的特性，但是在javascript中有其独特的表现形式，使用闭包我们可以在javascript中定义一些私有变量，甚至模仿出块级作用域，但闭包在使用过程中，存在的问题我们也需要了解，这样才能避免不必要问题的出现。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/06/12/js-scope</link>
+                <guid>http://enml.github.io/blog/2014/06/12/js-scope</guid>
+                <pubDate>2014-06-12T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript生成二维码(纯粹javascript代码，不依赖库，离线可用)</title>
+                <description>&lt;h1&gt;javascript生成二维码&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt; 二维码可以理解为一种信息标签，它将信息转化为二进制然后通过一定的规则进行编码形成几何图形，这样有利于机器识别。二维码在国内普通用户间的流行应该很大程度上归功于微信的推动，并且我发现很多人对二维码始终有着一种“不明觉厉”的感觉，不过假如我们理解了技术细节，便会知道事实上它就是一种信息格式转换，并没有什么神秘之处。&lt;/p&gt;
+
+&lt;p&gt; 网上生成二维码的应用多如牛毛，但大多数都是基于服务端，今天我闲着想使用比较熟悉的javascript来实现一下，网上搜了一下发现还是挺多使用javascript来生成二维码的，但绝大多数甚至说我搜到的全部都是使用现成的库，比如jquery-qrcode、Google Chart API。使用库的好处就是快捷方便，但弊端就是你会像一个傻子一样什么原理细节都不懂，你只是把人家封装好的黑盒子拿过来，接上几根线就可以用了，但这个黑盒子里面到底是什么你都不知道。这就是为什么同样是程序员，有的人可以成为封装黑盒子的高级工程师，而有的人却当个苦逼的码农。&lt;/p&gt;
+
+&lt;p&gt; 后来查找了一下ISO/IEC 18004:2006文档，足足100页的英文文档看的够呛了，不过说实话写的很详细条理很清晰，相信只要有耐心的人基本都能看懂它的实现原理。不过技术原理看懂了，不代表项目就实现了。编程的精髓并且也是最大的难点不在于语言本身，而是一种对客观事物进行抽象的思维能力；学会一门语言的语法很容易，有点基础的人学一门新语言基本一两天就搞定了，但仅仅只是语法是没有用的，能使用语言处理问题才是最重要的，把客观事物抽象处理是一件很费脑力的事情，我现在仍然感到很吃力。看完ISO/IEC 18004:2006文档我能清楚的理解二维码构造的原理，但要抽象成代码就很吃力了，网上不依赖库完全使用javascript实现的例子非常罕见，所以我花了几天最终才完成了这个小项目。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/06/06/generate_qr_code</link>
+                <guid>http://enml.github.io/blog/2014/06/06/generate_qr_code</guid>
+                <pubDate>2014-06-06T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>HTTP协议安全</title>
+                <description>&lt;h1&gt;HTTP协议安全&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;我在前两篇文章里详细介绍了HTTP协议以及报文在TCP传输层传输的性能问题，但是，这是一个邪恶的世界，无论你协议设计的多巧妙性能优化的再好，如果没有把安全问题考虑进去，那么这个协议注定是不可靠的。所以今天我来总结一下HTTP的安全问题。&lt;/p&gt;
+
+&lt;p&gt;信息安全的保护主要来自两个方面，端的安全（可以具体到客户端和服务器端）和链路的安全（也就是传输过程中的安全）。正常情况下我们必须先假设，端都是可信的。对于服务器端，你愿意使用这个公司提供的服务，你就相当于信任这个公司，所以我们认为服务器端是安全的。而客户端，你愿意使用这台电脑，也表明你认为这台电脑是比较安全的，中病毒木马什么的不在我们的讨论范围内。所以，我们今天讲的安全的焦点，主要是集中在通信的链路上，也就是数据传输过程的安全问题。而HTTP协议作为今天web服务的通用协议，它的安全问题变得十分严峻。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;HTTP协议是明文数据传输，这意味着只要我们拦截到了HTTP报文，我们就可以查看几乎所有正在传输的数据。攻击者最常用的攻击手法就是网络嗅探，试图从传输过程当中分析出敏感的数据，例如嗅探用户的登录过程，从而获取到用户的身份认证信息，甚至可以直接获得密码。即使无法获取登录信息，获得用户的手机号码、身份证号码、信用卡卡号等重要资料也会给用户带来隐私安全问题。
+我通过Fiddler2进行抓包，在浏览器上登陆一个论坛，然后发现登陆的用户名和密码直接以明文的形式POST到服务器，下面是截图：&lt;/p&gt;
+
+&lt;p&gt;这是一个资讯论坛，我们也无法要求它能保障我们的信息安全，但是我们仍然可以感觉到一丝隐隐的不安，很多人的密码都是通用的，假如你论坛的密码明文被拦截到，那么攻击者拿这个明文遍历其他重要网站，比如说淘宝，qq之类的，有很大的可能会验证成功，那么你这些账号就全面沦陷。&lt;/p&gt;
+
+&lt;p&gt;另外，HTTP是一种无状态的连接，在传输客户端请求和服务器响应时，唯一的时间完整性检验就是在报文头部包含了本次传输数据的长度，而对内容是否被篡改不做确认。因此攻击者可以轻易的发动中间人攻击，修改客户端和服务端传输的数据，甚至在传输数据中插入恶意代码，导致客户端被引导至恶意网站被植入木马。这并非什么难事，现在无线路由器的普及带来了很大的安全隐患，你访问了带有恶意javascript代码的网页有可能就把你路由器的DNS修改了，这样你的网络请求都必须经过攻击者设定好的DNS服务器，这样就实现了中间人攻击，攻击者可以冒用你的身份信息对服务端进行请求，比如转账，后果可想而知。这主要是由于HTTP缺乏对数据完整性检测的能力，因此客户端和服务端都觉察不到任何异常，以为双方是直接通信。下面是中间人攻击的示意图：&lt;/p&gt;
+
+&lt;p&gt;除了上面提到的安全隐患，事实上还有CSRF, XSS 等关于cookies的安全问题。所以我们应该重视一下如何保障HTTP通信的安全。为保证HTTP安全，手段有很多，这篇介绍其中几种方式。首先是数字加密，有多种方式可以对报文进行编/解码，不仅防止被攻击者读取，还可以防止报文被篡改。随着密码学的发展，已不再是简单的通过密码（一套编码方案，编码器）将明文变成密文了，而使用密钥的密码会更灵活、更安全。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;对称密钥加密技术&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;在对称密钥加密技术中，发送端和接收端要共享相同的密钥key才能进行通信，因此，保证密钥的机密状态时很重要的，在很多情况下，编/解码算法是众所周知的，密钥就是唯一保密的东西了，一般攻击者会通过暴力破解，也就是枚举攻击，密钥越长被破解的概率也就相对低一些。
+一般按照对称密钥技术，如果A、B、C和J对话，那么ABC都要建立自己和J的密钥，万一有N个节点，每个节点都要和其他所有N-1个节点对话，总会会产生N的二次方密钥，这从管理来说是行不通的。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;公开密钥加密技术&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;公开密钥加密技术没有为每对主机使用单独的加密/解密密钥，而是使用两个非对称密钥：一个用来对主机报文编码，另一个用来对主机报文解码，编码密钥是众所周知的，只有解密密钥是保密的，这样只有接收端才能对发送给他的报文进行解码，也不存在管理上的问题。常用的公开密钥加密算法是RSA算法，如果能破解由他计算出来的私有密钥就可以入侵瑞士银行了。
+因为公开密钥加密算法的计算会比较慢，所以比较常见的做法是在两个节点通过便捷的公开密钥加密技术建立起安全通信，然后再利用那条通道产生并发送临时随机对称密钥，通过更快的对称加密技术对其余的数据进行加密。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;数字签名&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;数字签名是为了验证报文是否被篡改过，就像我们写信签上自己的姓名，让接受者知道信是由本人写的，而不是入侵者。数字签名是附加在报文上的特殊加密校验码，签名可以证明是作者编写了这条报文，只有作者才会有最机密的私有密钥，因此，只有作者才能计算出这些校验和；另外就是防止报文篡改。
+数字签名通常是用非对称公开密钥技术产生的。因为只有作者才知道其私有密钥，所以可以将作者的私有密钥当做一种“指纹”使用。如下图：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;数字证书&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;数字证书这个大家比较熟悉，12306经常会弹出来数字证书不可信等信息，这相当于因特网上的“ID卡”，其中包含了由某个受信任组织担保的用户或公司的相关信息，就像我们身份证，由国家机关颁发，那我们的身份证就可信了，如果你的身份证是有我颁发的，那鬼也不会信的。数字证书里面包含的所有信息都是由一个官方的“证书颁发机构”以数字方式签发的，基本的数字证书中通常包括：版本、序列号、签名算法ID、证书颁发者、有效期、对象名称、对象的公开密钥信息、发布者唯一的ID、对象唯一的ID、扩展、证书的办法机构签名。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;HTTPS&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;HTTPS是最常见的HTTP安全版本，所有主要的商业浏览器和服务器上都提供HTTPS。HTTPS就是HTTP报文发送给TCP之前，先将其发送给了一个安全层（安全层通过SSL及其现在替代协议TLS实现），对其进行加密，SSL是一个二进制协议，与HTTP不同，其流量是承载在443端口（http是80）上的。HTTPS通过在TCP层与HTTP层之间增加了一个SSL（Secure Socket Later）来加强安全性，数据传输过程中，加密解密均由SSL进行，与上层的HTTP无关，对HTTP来说是透明的。HTTPS增强的安全性表现在其双向的身份认证确保身份都是真实可靠的，其数据传输的机密性提高，数据完整性检验更严格，数据报被重放攻击的可能性降低。&lt;/p&gt;
+
+&lt;p&gt;原理过程&lt;/p&gt;
+
+&lt;p&gt;当客户端使用https 访问web serever 时，它会对客户端出示一个证书；到客户端要检测证书，如果可行浏览器就会随机产生Key值，然后再利用证书上的公钥来加密key值，然后再把加密的key 值传送到WWW服务器，服务器利用自己的私钥打开：&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/27/HTTP-secure</link>
+                <guid>http://enml.github.io/blog/2014/05/27/HTTP-secure</guid>
+                <pubDate>2014-05-27T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>canvas总结之图像处理</title>
+                <description>&lt;h1&gt;canvas总结之图像处理&lt;/h1&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/24/canvas-image</link>
+                <guid>http://enml.github.io/blog/2014/05/24/canvas-image</guid>
+                <pubDate>2014-05-24T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>canvas总结之Pixel Manipulation</title>
+                <description>&lt;h1&gt;canvas总结之Pixel Manipulation&lt;/h1&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/24/canvas-Pixel-Manipulation</link>
+                <guid>http://enml.github.io/blog/2014/05/24/canvas-Pixel-Manipulation</guid>
+                <pubDate>2014-05-24T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>canvas总结之动画</title>
+                <description>&lt;h1&gt;canvas总结之动画&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt; &lt;pre class=&quot;prettyprint linenums&quot;&gt;
+        function fallAnimation() {
+            for (var i = 0; i &amp;lt; newBall.length; i++) {
+                newBall[i].x += newBall[i].Vx;
+                newBall[i].y += newBall[i].Vy;
+                newBall[i].Vy += newBall[i].a;
+                bounces();&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;            function bounces() {
+                //反弹效果
+                if (newBall[i].y &amp;gt;= (context.canvas.height - ball.radius)) {
+                    newBall[i].y = (context.canvas.height - ball.radius);
+                    newBall[i].Vy = -newBall[i].Vy * 0.75;
+                }
+                //delete the ball outside
+                if (newBall[i].x + ball.radius &amp;lt; 0 || newBall[i].x - ball.radius &amp;gt; context.canvas.width) {
+                    newBall.splice(i, 1);
+                    i--;
+                    console.log(newBall.length);
+                }
+                //停止interval当全部小球已滚出画面
+                if (newBall.length == 0) {
+                    clearInterval(start);
+                }
+            }
+        }
+    }
+
+                    &amp;lt;/pre&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/23/canvas_countdown</link>
+                <guid>http://enml.github.io/blog/2014/05/23/canvas_countdown</guid>
+                <pubDate>2014-05-23T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>Http Performance</title>
+                <description>
+</description>
+                <link>http://enml.github.io/blog/2014/05/22/HTTP-performance</link>
+                <guid>http://enml.github.io/blog/2014/05/22/HTTP-performance</guid>
+                <pubDate>2014-05-22T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>canvas总结之method</title>
+                <description>&lt;h1&gt;canvas总结之method&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;canvas介绍&lt;/h2&gt;
+
+&lt;p&gt;&lt;code&gt;canvas&lt;/code&gt;还没出现之前，开发人员通常使用 SVG，VML 等技术进行 Web 绘图操作，但这些基于XML的绘图语言声明式的绘图方式并不能满足复杂绘图操作在性能上的需求，特别是需要像素级别绘图能力的游戏。canvas提供了一系列用于绘图的API,我们可以使用JavaScript脚本语言在canvas中进行一系列基于命令的图形绘制操作。我们的绘图和动画终于可以摆脱第三方插件了，虽然前端的标准问题始终是个大坑。&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;&amp;lt;canvas id=&quot;canvas&quot;&amp;gt;&amp;lt;/canvas&amp;gt;&lt;/code&gt;  这就是canvas，它就是一个html标签，它除了提供一块画布和一系列的API让你可以在javascript中使用之外，看上去什么都没有。但是一块画布和一系列API就等于给了你一张纸和一套画图工具，你可以在上面发挥你的想象，至于画什么以及画的好不好那就是开发者功底的事了。接下来主要是对canvas的API进行分类和总结。&lt;/p&gt;
+
+&lt;h2&gt;canvas的API&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Paths
+ 跟路径有关的method主要有：&lt;/li&gt;
+&lt;li&gt;stroke()：画边框&lt;/li&gt;
+&lt;li&gt;fill()：填充&lt;/li&gt;
+&lt;li&gt;beginPath()：表示路径的开始&lt;/li&gt;
+&lt;li&gt;closePath()：路径结束&lt;/li&gt;
+&lt;li&gt;moveTo()：确定起点&lt;/li&gt;
+&lt;li&gt;lineTo()：画直线&lt;/li&gt;
+&lt;li&gt;arc()：画弧线，当然也能画圆&lt;/li&gt;
+&lt;li&gt;rect()：画矩形&lt;/li&gt;
+&lt;li&gt;bezierCurveTo()：贝塞尔曲线&lt;/li&gt;
+&lt;li&gt;quadraticCurverTo()：二次方程曲线&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;p&gt;我们通过下面的代码来看看实际效果。&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint linenums&quot;&gt;
+    var canvas = document.getElementById(&quot;canvas&quot;),
+        context = canvas.getContext(&quot;2d&quot;);
+    context.beginPath();
+    context.moveTo(20,20);
+    context.lineTo(200,240);
+    context.stroke();
+    context.closePath();
+&lt;/pre&gt;
+
+
+&lt;p&gt;这是最简单的画线条方法，用moveTo()确定起点，再用lineTo()画线。有了线段我们可以干嘛？最直观的我们可以画几何图形，比如说三角形，矩形。当我们逻辑能力再强点，想象力再丰富点的时候，线段可以画出令人惊叹的画面。比如说下面的树，就是使用最简单的线段通过递归不断叠加画出来，因为通过random()函数对角度进行随机计算，因此你每一次刷新树的形状都会变化。&lt;/p&gt;
+
+&lt;p&gt;2.style
+    我们画出几何图形后，一切都是黑白的。这个时候需要的就是style相关的属性：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;fillStyle：填充颜色&lt;/li&gt;
+&lt;li&gt;strokeStyle：边框颜色&lt;/li&gt;
+&lt;li&gt;shadowColor：阴影颜色&lt;/li&gt;
+&lt;li&gt;shadowBlur：阴影虚化范围&lt;/li&gt;
+&lt;li&gt;shadowOffsetX：阴影x轴偏移量&lt;/li&gt;
+&lt;li&gt;shadowOffsetY：阴影y轴偏移量&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre class=&quot;prettyprint linenums&quot;&gt;
+context.shadowBlur=10; 
+context.shadowOffsetX=20; 
+context.shadowColor=&quot;black&quot;; 
+context.fillStyle=&quot;red&quot;; 
+context.fillRect(20,20,100,80);
+&lt;/pre&gt;
+
+
+&lt;p&gt;上面代码为矩形添加了黑色的阴影，阴影在x轴正方向偏移20px，阴影的虚化范围是10px。这几个canvas的style属性可以为图像添加漂亮的视觉效果，你的图像不再是水墨画，而是多彩多姿的水彩画。&lt;/p&gt;
+
+&lt;p&gt;3.transition&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;scale()：按比例放大缩小&lt;/li&gt;
+&lt;li&gt;rotate()：旋转&lt;/li&gt;
+&lt;li&gt;translate()：平移，会在原来的基础上平移&lt;/li&gt;
+&lt;li&gt;transform()：变形&lt;/li&gt;
+&lt;li&gt;setTransform()：重置原来的变形执行新的变形&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;通过transition的相关方法，我们可以把简单的几何图形旋转变形，因此我们不必为了要画另一个只需改变角度的新图形而从头开始，因为这样重复了大量的代码，不但耗时耗力，而且对于代码维护和性能优化都是一个隐患。这些method也可以使动画变得更简单。&lt;/p&gt;
+
+&lt;p&gt;4.pixel manipulation&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;createImageData()&lt;/li&gt;
+&lt;li&gt;getImageData()&lt;/li&gt;
+&lt;li&gt;putImageData()&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;这三个方法是从像素层次对图像进行操作，看上去很简单，但事实上功能很强大。我们可以获取图像的每一个像素，然后对像素进行操作，比如改变像素的rgb值，从而使整张图片得到完全不同的视觉效果，比如说对像素rgb值进行取反操作已实现整张图像反转滤镜效果。&lt;/p&gt;
+
+&lt;p&gt;总结，今天介绍了canvas的主要绘图方法，这些方法基础功能很简单，但能实现极其惊艳的效果，具体就看自己能否把它用活。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/21/canvas-method</link>
+                <guid>http://enml.github.io/blog/2014/05/21/canvas-method</guid>
+                <pubDate>2014-05-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>收藏颜色</title>
+                <description>&lt;h1&gt;收藏颜色的工具&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://enml.github.io/blog/image/collect_color.jpg&quot; alt=&quot;collect_color&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;用了三个小时完成了上图的功能，满足了我的需求。&lt;/p&gt;
+
+&lt;p&gt;只要在输入框输入颜色数值，便可记录到数据库，并把颜色作为该数值背景色输出页面。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;本来是在寻找一个可以保存自己喜欢的颜色的工具，一开始想着记录在onenote，但是只能记录数值，不够直观。如果把图片粘贴过去会很繁琐并且不够雅观。后来把颜色直接合并在一张图上，但记录时每次都需要进行图片修改，繁琐也依然不美观。中午午睡后百度了一下是否有相关的在线工具，一无所获。突然想着要不自己搞一个吧！在脑海里构建了一下基本框架后觉得可行，便开始编写代码。花了三个小时总算实现了。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/20/collect_color</link>
+                <guid>http://enml.github.io/blog/2014/05/20/collect_color</guid>
+                <pubDate>2014-05-20T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>HTTP协议的简析</title>
+                <description>&lt;h1&gt;HTTP协议的简析&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;HTTP协议是一种可靠的数据传输协议，位于应用层，在TCP协议的上层。我们现在使用的web服务几乎都是建立在HTTP协议之上，HTTP是互联网通信的公共语言。&lt;/p&gt;
+
+&lt;p&gt;从宏观角度来看，HTTP连接是一个很简单的过程，客户端发起请求，服务端相应响应的数据，断开连接。这就是一个完整的连接过程，我们每天上网都在经历这个过程，当你访问一个url时，浏览器会把这个url进行解析，通过dns获取域名对应的IP地址，然后向这个IP地址发送一个HTTP请求，告诉服务器我需要什么数据，服务器处理这个HTTP请求后调用对应的资源，给客户端一个HTTP响应，这个响应中就包含了我们请求的资源。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;上图是一个完整的HTTP连接过程。一般情况下请求中会包含3部分：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;start line(上图中的GET /something/some.gif HTTP/1.1)&lt;/li&gt;
+&lt;li&gt;request header（键值对，比如Accept:text.*,用来告诉服务器我要接受的数据的格式是text）&lt;/li&gt;
+&lt;li&gt;request body（get方法一般body为空，post方法会把提交给服务器的数据写在request body中）.&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;同样服务器的respose中也会包含这三部分，但是内容不同。这里就不讲了。我们来讲数据的传输。&lt;/p&gt;
+
+&lt;p&gt;HTTP是在应用层把我们的请求以及服务器的响应转化为&lt;code&gt;messages&lt;/code&gt;(报文)发送给传输层的TCP协议进行传输，也就是说，HTTP事实上并不关心数据的传输过程，数据传输依赖的是极为可靠的TCP协议。说到TCP，我们就不得不说&lt;code&gt;三次握手&lt;/code&gt;。TCP为了确保连接的可靠性，建立连接时必须遵循严格的三次握手确认才能连接成功。下图是示意图：&lt;/p&gt;
+
+&lt;p&gt;我尽可能用通俗的语言来讲解这个过程：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;第一次握手：client把自己的身份证（SYN）发给server，告诉server说我要跟你连接。&lt;/li&gt;
+&lt;li&gt;第二次握手：server知道client想跟他连接后，就在收到的client的身份证上盖个章（ACK=SYN+1），然后把server自己的身份证(新的SYN)+盖了章的身份证一起发回给client，告诉他我同意你的连接请求。&lt;/li&gt;
+&lt;li&gt;第三次握手：client看到自己的身份证已经盖了章，就相信这个请求确实是来自server并且server同意连接，所以client也在server的身份证上盖个章（新ACK=新SYN+1）发回给server。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;server收到自己的盖了章的身份证后就跟client建立连接，发送数据。现在的TCP栈都运行客户端在第三次握手时直接把&lt;code&gt;messages&lt;/code&gt;发送给服务器。为什么要三次握手，而不是两次呢？据我目前的理解，三次握手是已最低的代价来保证数据传输的可靠性。我们假设只有两次握手即可建立连接发送数据，那么如果在第二次握手的过程中确认包丢失，client端收不到server的确认包，那么client会认为他们之间还不能建立连接，而server并不知道确认包丢失了，以为我已经确认了我们就可以建立连接，所以此时server就会跟client进行通信，但client肯定会拒收，server就一直重发数据，造成了一个死结。而很明显，三次握手就不会出现这种不可靠的情况，四次握手就更可靠了，但浪费资源。&lt;/p&gt;
+
+&lt;p&gt;说完TCP建立连接的过程，我们再回过头来看一看HTTP报文是怎么传输的。下图所示&lt;/p&gt;
+
+&lt;p&gt;这是报文传输的过程，浏览器解析用户请求==&gt;生成HTTP请求报文==&gt;TCP三次握手跟服务器建立连接==&gt;传送报文给服务器==&gt;服务器处理报文请求，生成HTTP响应报文==&gt;传送报文给客户端==&gt;断开连接。&lt;/p&gt;
+
+&lt;p&gt;我们对HTTP请求已经数据传输的过程有了大概的了解之后，我们再来谈谈一些HTTP报文的细节，关于状态码、请求方法。&lt;/p&gt;
+
+&lt;h3&gt;状态码&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;100-199 ：信息提示&lt;/li&gt;
+&lt;li&gt;200-299：成功&lt;/li&gt;
+&lt;li&gt;300-399：重定向&lt;/li&gt;
+&lt;li&gt;400-499：客户端错误&lt;/li&gt;
+&lt;li&gt;500-599：服务器错误&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;其中我们挑出几个常用的具有代表性的说一下。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;100 continue&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;这是一个比较让人疑惑的状态码。它向服务器发送一个携带了值为100 continue的expect请求，服务器收到后响应一个100 continue状态码或者错误码。这看上去很多余，但事实上，的确有那么点多余，但是它有一个作用就是在发送实体之前先确认服务器是否接受这个实体，避免发送了一个服务器无法处理或使用的实体。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;200 ok&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;这个最常见，你每一个成功的请求都会收到200 ok的状态码，告诉浏览器请求成功。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;304 no modified&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;可以在请求里添加If-Modefied-Since:xxx的首部，服务器对请求资源进行检验后若确定在该时间内资源未被改动，则可以返回304 no modefied进行资源重定向，让浏览器直接使用本地副本。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;404 not found&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;当服务器无法找到你所请求的资源，可能资源已不存在，可能客户端的请求有错误，这时候会返回404 not found，这个几乎每个上网的用户都会遇到。&lt;/p&gt;
+
+&lt;p&gt;上面是比较常见的状态码的含义。在HTTP报文里面，状态码是一种很重要的信息，为客户端提供了一种理解事务处理结果的便捷方式。&lt;/p&gt;
+
+&lt;p&gt;下一篇文章会归纳关于HTTP报文通过TCP/IP底层协议进行传输的性能问题。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/20/HTTP</link>
+                <guid>http://enml.github.io/blog/2014/05/20/HTTP</guid>
+                <pubDate>2014-05-20T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>Template</title>
+                <description>&lt;h1&gt;Template&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;在view里面，我们获取了相关的数据，但我们的目的是将数据呈现出来。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;于是：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1.首先我们想到的是直接把数据硬编码到html代码里面，然后通过&lt;code&gt;HttpResponse&lt;/code&gt;对象传递给浏览器进行渲染：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;from django.http import HttpResponse
+import datetime
+
+def current_datetime(request):
+    now = datetime.datetime.now()
+    html = &quot;&amp;lt;html&amp;gt;&amp;lt;body&amp;gt;It is now %s.&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;&quot; % now
+    return HttpResponse(html)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;但是很明显这种方法不适合生产环境，你不可能把整个html页面都硬编码在view里面，因为这显得既愚蠢又低效。对于template的改动很明显要比view频繁得多，这种方式意味着你想更改页面表现时都必须得改动python代码，并且前后端无法同步开发。于是有了第二种方式：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2.把html代码分离成独立的模板，通过加载模板文件进行渲染，这样可以实现前后端分离：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;   #view
+from django.shortcuts import render_to_response
+import datetime
+
+def current_datetime(request):
+    now = datetime.datetime.now()
+    return render_to_response(&#39;current_datetime.html&#39;, {&#39;current_date&#39;: now})
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;#template
+&amp;lt;html&amp;gt;&amp;lt;body&amp;gt;It is now .&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;通过render()传递数据给template的方式在上一篇文章有列举出来。这种模式的好处很明显。但我们又遇到一个问题：&lt;strong&gt;假如我的网站有100个页面，那我是不是要写100个template呢？&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;我们知道这样是愚蠢。编程中有一个很重要的思想就是--&lt;strong&gt;最大限度地实现代码重用。&lt;/strong&gt; 而我们写100个页面的重复代码可能已经超过40%了，这不但费时费力，你还可能见笑于大方之家。所以我们有一种优雅的解决方式：&lt;strong&gt;include&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;(1). 把重用代码分离出来，比如header.html,footer.html,sidebar.html；然后&lt;code&gt;include&lt;/code&gt;到content.html中。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# header.html
+
+&amp;lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&amp;gt;
+&amp;lt;html lang=&quot;en&quot;&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;The current time&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;    # footer.html
+
+        &amp;lt;p&amp;gt;Thanks for visiting my site.&amp;lt;/p&amp;gt;
+    &amp;lt;/body&amp;gt;
+    &amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;# include &#39;header&#39; and &#39;footer&#39;
+
+{ include &#39;header.html&#39; %}
+&amp;lt;body&amp;gt;
+    &amp;lt;h1&amp;gt;My helpful timestamp site&amp;lt;/h1&amp;gt;
+    &amp;lt;p&amp;gt;It is now .&amp;lt;/p&amp;gt;
+{ include &#39;footer.html&#39; %}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;没错，这样很优雅，可以实现代码重用。但是仍然有个问题：当代码中存在哪怕一个标记不同时，这部分代码你就无法分离出来，这导致了你仍然需要重复大量的代码。比如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# first page
+
+&amp;lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&amp;gt;
+&amp;lt;html lang=&quot;en&quot;&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;The current time&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+    &amp;lt;h1&amp;gt;My helpful timestamp site&amp;lt;/h1&amp;gt;
+    &amp;lt;p&amp;gt;It is now .&amp;lt;/p&amp;gt;
+
+    &amp;lt;hr&amp;gt;
+    &amp;lt;p&amp;gt;Thanks for visiting my site.&amp;lt;/p&amp;gt;
+&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;# second page
+
+&amp;lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&amp;gt;
+&amp;lt;html lang=&quot;en&quot;&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;Future time&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+    &amp;lt;h1&amp;gt;My helpful timestamp site&amp;lt;/h1&amp;gt;
+    &amp;lt;p&amp;gt;In  hour(s), it will be .&amp;lt;/p&amp;gt;
+
+    &amp;lt;hr&amp;gt;
+    &amp;lt;p&amp;gt;Thanks for visiting my site.&amp;lt;/p&amp;gt;
+&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这两个页面中&lt;code&gt;&amp;lt;title&amp;gt;&lt;/code&gt;不同，意味着&lt;code&gt;&amp;lt;title&amp;gt;&lt;/code&gt;以下的部分都不能并入&lt;code&gt;header.html&lt;/code&gt;中，哪怕下面仍然存在大量的重复代码。所以有了更优雅的解决办法：&lt;strong&gt;extends&lt;/strong&gt; -- inculde的逆向思维。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;(2). 我们把模板里面的‘不同代码’进行定义，相同的代码保存为base模板&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&amp;gt;
+&amp;lt;html lang=&quot;en&quot;&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;{ block title %}{ endblock %}&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+    &amp;lt;h1&amp;gt;My helpful timestamp site&amp;lt;/h1&amp;gt;
+    { block content %}{ endblock %}
+    { block footer %}
+    &amp;lt;hr&amp;gt;
+    &amp;lt;p&amp;gt;Thanks for visiting my site.&amp;lt;/p&amp;gt;
+    { endblock %}
+&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;此时&lt;code&gt;base.html&lt;/code&gt;变成了一个骨架，你可以把需要的内容填充进去即可，这最大限度实现了代码重用。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    # first page
+
+    { extends &quot;base.html&quot; %}
+
+    { block title %}The current time{ endblock %}
+
+    { block content %}
+    &amp;lt;p&amp;gt;It is now .&amp;lt;/p&amp;gt;
+    { endblock %}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;    # second page
+
+    { extends &quot;base.html&quot; %}
+
+    { block title %}Future time{ endblock %}
+
+    { block content %}
+    &amp;lt;p&amp;gt;In  hour(s), it will be .&amp;lt;/p&amp;gt;
+    { endblock %}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;woo! 简单优雅！这是Template设计的思想历程。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/10/template</link>
+                <guid>http://enml.github.io/blog/2014/05/10/template</guid>
+                <pubDate>2014-05-10T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>view传递context的方式</title>
+                <description>&lt;h1&gt;view传递context的方式&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt; 通过view的render()方法填充template可以有以下方式：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1.适合于数据量小且静态的数据。在template中直接使用相关键值为标签：
+&lt;code&gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def test1(request):
+    return render(request,&#39;test/raw.htm&#39;,{
+                &#39;name&#39;:&#39;Enm&#39;,
+                &#39;age&#39;:22,
+                &#39;company&#39;: &#39;Outdoor Equipment&#39;,
+                &#39;ship_date&#39;: datetime.datetime.now(),
+                &#39;ordered_warranty&#39;: False})
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;2.通过调用属性的方式传递整个dictionary。但在template中必须使用属性方式：{{ &lt;strong&gt;person.&lt;/strong&gt; name }},{\% for i,k in &lt;strong&gt;dict.&lt;/strong&gt; items \%}&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def test2():
+    person = {  &#39;name&#39;:&#39;Enm&#39;,
+                &#39;age&#39;:22,
+                &#39;company&#39;: &#39;Outdoor Equipment&#39;,
+                &#39;ship_date&#39;: datetime.datetime.now(),
+                &#39;ordered_warranty&#39;: False}
+
+    dict = {&quot;name&quot;:&quot;enm&quot;,&quot;age&quot;:&quot;21&quot;,&quot;school&quot;:&quot;szu&quot;}
+    return render(request,&#39;test/raw.htm&#39;,{ &#39;person&#39;:person, &#39;dict&#39;:dict})
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;3.使用&lt;strong&gt;locals(),locals()&lt;/strong&gt; 是个字典，直接赋值给变量。很明显这种方式更加优雅和便捷，但缺点就是它会把所有的dictionary都传递，也就是说它默认传递的值可能会比你预想中的多。&lt;/p&gt;
+
+&lt;p&gt;   template中仍然必须使用属性方式：{{ &lt;strong&gt;person.&lt;/strong&gt; name }},{\% for i,k in &lt;strong&gt;dict.&lt;/strong&gt; items \%}&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def test3():
+    person = {  &#39;name&#39;: &#39;Enm&#39;,
+                &#39;age&#39;:22,
+                &#39;company&#39;: &#39;Outdoor Equipment&#39;,
+                &#39;ship_date&#39;: datetime.datetime.now(),
+                &#39;ordered_warranty&#39;: False}
+
+    dict = {&quot;name&quot;:&quot;enm&quot;,&quot;age&quot;:&quot;21&quot;,&quot;school&quot;:&quot;szu&quot;}
+    return render(request,&#39;test/raw.htm&#39;,locals())
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/05/03/view_render</link>
+                <guid>http://enml.github.io/blog/2014/05/03/view_render</guid>
+                <pubDate>2014-05-03T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>python list的技巧</title>
+                <description>&lt;h1&gt;Python list的一些技巧&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;列表相邻元素压缩器&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; a = [1, 2, 3, 4, 5, 6]
+&amp;gt;&amp;gt;&amp;gt; zip(*([iter(a)] * 2))
+[(1, 2), (3, 4), (5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent = lambda a, k: zip(*([iter(a)] * k))
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 3)
+[(1, 2, 3), (4, 5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 2)
+[(1, 2), (3, 4), (5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 1)
+[(1,), (2,), (3,), (4,), (5,), (6,)]
+&amp;gt;&amp;gt;&amp;gt; zip(a[::2], a[1::2])
+[(1, 2), (3, 4), (5, 6)]
+&amp;gt;&amp;gt;&amp;gt; zip(a[::3], a[1::3], a[2::3])
+[(1, 2, 3), (4, 5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent = lambda a, k: zip(*(a[i::k] for i in range(k)))
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 3)
+[(1, 2, 3), (4, 5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 2)
+[(1, 2), (3, 4), (5, 6)]
+&amp;gt;&amp;gt;&amp;gt; group_adjacent(a, 1)
+[(1,), (2,), (3,), (4,), (5,), (6,)]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;用压缩器反转字典&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; m = {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3, &#39;d&#39;: 4}
+&amp;gt;&amp;gt;&amp;gt; m.items()
+[(&#39;a&#39;, 1), (&#39;c&#39;, 3), (&#39;b&#39;, 2), (&#39;d&#39;, 4)]
+&amp;gt;&amp;gt;&amp;gt; zip(m.values(), m.keys())
+[(1, &#39;a&#39;), (3, &#39;c&#39;), (2, &#39;b&#39;), (4, &#39;d&#39;)]
+&amp;gt;&amp;gt;&amp;gt; mi = dict(zip(m.values(), m.keys()))
+&amp;gt;&amp;gt;&amp;gt; mi
+{1: &#39;a&#39;, 2: &#39;b&#39;, 3: &#39;c&#39;, 4: &#39;d&#39;}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;列表展开&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; a = [[1, 2], [3, 4], [5, 6]]
+&amp;gt;&amp;gt;&amp;gt; list(itertools.chain.from_iterable(a))
+[1, 2, 3, 4, 5, 6]
+
+&amp;gt;&amp;gt;&amp;gt; sum(a, [])
+[1, 2, 3, 4, 5, 6]
+
+&amp;gt;&amp;gt;&amp;gt; [x for l in a for x in l]
+[1, 2, 3, 4, 5, 6]
+
+&amp;gt;&amp;gt;&amp;gt; a = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+&amp;gt;&amp;gt;&amp;gt; [x for l1 in a for l2 in l1 for x in l2]
+[1, 2, 3, 4, 5, 6, 7, 8]
+
+&amp;gt;&amp;gt;&amp;gt; a = [1, 2, [3, 4], [[5, 6], [7, 8]]]
+&amp;gt;&amp;gt;&amp;gt; flatten = lambda x: [y for l in x for y in flatten(l)] if type(x) is list else [x]
+&amp;gt;&amp;gt;&amp;gt; flatten(a)
+[1, 2, 3, 4, 5, 6, 7, 8]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;生成器表达式&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; g = (x ** 2 for x in xrange(10))
+&amp;gt;&amp;gt;&amp;gt; next(g)
+0
+&amp;gt;&amp;gt;&amp;gt; next(g)
+1
+&amp;gt;&amp;gt;&amp;gt; next(g)
+4
+&amp;gt;&amp;gt;&amp;gt; next(g)
+9
+&amp;gt;&amp;gt;&amp;gt; sum(x ** 3 for x in xrange(10))
+2025
+&amp;gt;&amp;gt;&amp;gt; sum(x ** 3 for x in xrange(10) if x % 3 == 1)
+408
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;字典推导&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; m = {x: x ** 2 for x in range(5)}
+&amp;gt;&amp;gt;&amp;gt; m
+{0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+
+&amp;gt;&amp;gt;&amp;gt; m = {x: &#39;A&#39; + str(x) for x in range(10)}
+&amp;gt;&amp;gt;&amp;gt; m
+{0: &#39;A0&#39;, 1: &#39;A1&#39;, 2: &#39;A2&#39;, 3: &#39;A3&#39;, 4: &#39;A4&#39;, 5: &#39;A5&#39;, 6: &#39;A6&#39;, 7: &#39;A7&#39;, 8: &#39;A8&#39;, 9: &#39;A9&#39;}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;用字典推导反转字典&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; m = {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3, &#39;d&#39;: 4}
+&amp;gt;&amp;gt;&amp;gt; m
+{&#39;d&#39;: 4, &#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3}
+&amp;gt;&amp;gt;&amp;gt; {v: k for k, v in m.items()}
+{1: &#39;a&#39;, 2: &#39;b&#39;, 3: &#39;c&#39;, 4: &#39;d&#39;}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;命名元组&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; Point = collections.namedtuple(&#39;Point&#39;, [&#39;x&#39;, &#39;y&#39;])
+&amp;gt;&amp;gt;&amp;gt; p = Point(x=1.0, y=2.0)
+&amp;gt;&amp;gt;&amp;gt; p
+Point(x=1.0, y=2.0)
+&amp;gt;&amp;gt;&amp;gt; p.x
+1.0
+&amp;gt;&amp;gt;&amp;gt; p.y
+2.0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;继承命名元组&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; class Point(collections.namedtuple(&#39;PointBase&#39;, [&#39;x&#39;, &#39;y&#39;])):
+...     __slots__ = ()
+...     def __add__(self, other):
+...             return Point(x=self.x + other.x, y=self.y + other.y)
+...
+&amp;gt;&amp;gt;&amp;gt; p = Point(x=1.0, y=2.0)
+&amp;gt;&amp;gt;&amp;gt; q = Point(x=2.0, y=3.0)
+&amp;gt;&amp;gt;&amp;gt; p + q
+Point(x=3.0, y=5.0)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;有最大长度的双端队列&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; last_three = collections.deque(maxlen=3)
+&amp;gt;&amp;gt;&amp;gt; for i in xrange(10):
+...     last_three.append(i)
+...     print &#39;, &#39;.join(str(x) for x in last_three)
+...
+0
+0, 1
+0, 1, 2
+1, 2, 3
+2, 3, 4
+3, 4, 5
+4, 5, 6
+5, 6, 7
+6, 7, 8
+7, 8, 9
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;可排序词典&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; m = dict((str(x), x) for x in range(10))
+&amp;gt;&amp;gt;&amp;gt; print &#39;, &#39;.join(m.keys())
+1, 0, 3, 2, 5, 4, 7, 6, 9, 8
+&amp;gt;&amp;gt;&amp;gt; m = collections.OrderedDict((str(x), x) for x in range(10))
+&amp;gt;&amp;gt;&amp;gt; print &#39;, &#39;.join(m.keys())
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+&amp;gt;&amp;gt;&amp;gt; m = collections.OrderedDict((str(x), x) for x in range(10, 0, -1))
+&amp;gt;&amp;gt;&amp;gt; print &#39;, &#39;.join(m.keys())
+10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/04/25/python-code</link>
+                <guid>http://enml.github.io/blog/2014/04/25/python-code</guid>
+                <pubDate>2014-04-25T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>后智能手机时代</title>
+                <description>&lt;h1&gt;谁将取代智能手机&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.wccbr.com/wp-content/uploads/2013/03/Robot_Wallpaper_1.jpg&quot; alt=&quot;robot&quot; /&gt;&lt;/p&gt;
+
+&lt;h3&gt;&lt;strong&gt;智能手表&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;　现在手表被炒的很热，但以目前来看，手表只是一个辅佐设备；注定手表不可能超越智能手机。手表的特点在于屏幕小，便携，查看信息快速直接；但屏幕小也是它的极限性（屏幕扩大了跟智能手机就没差别了），决定了它不适合发展成独立的终端，你能想象拿着手表刷微博看知乎发邮件吗？&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;　除非发展出了超越平面显示的信息展现方式，比如说已经被说烂了的“全息投影”。否则手表永远只能是手机的辅佐设备。&lt;/p&gt;
+
+&lt;h3&gt;&lt;strong&gt;智能眼镜&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;　这货一开始我不看好，谁tm想戴个电池cpu在太阳穴那里，而且带了几年眼镜的我表示对眼镜深痛恶绝啊。后来了解了google glass之后，我发现这货绝对是未来。不，我是说这个方向。&lt;/p&gt;
+
+&lt;p&gt;　为什么智能眼镜有潜力取代智能手机呢？首先，我们从电子设备的发展历程可以看出，任何具有划时代的产品都是通过对人机交互方式进行革新。从命令行跨越到图形界面，从物理按键跨越到触摸，从遥控器跨越到体感声控……再看看手表，再怎么有想象力它始终只是一部小尺寸精简化的手机绑在手上，不管是现在市面上丑陋不堪的炒作产品，还是被寄予厚望的iwatch，都难以在信息展现方式上得到突破；再看看眼镜，信息是直接投射到视网膜上，信息展现方式已经不再局限于屏幕的大小，你眼前的整个视角都是屏幕，甚至可以通过调节投射的焦距而达到调节屏幕的大小，那可想像的空间可就大了：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;因为展现信息独特的视角，眼镜可以覆盖你的整个视角，它可以挡住外来的光线让你完全沉浸在数字光影之中；你可以随时随地享受不亚于甚至超越IMAX的视觉盛宴。是的，我说的不是3D眼镜。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;因为现实与虚拟的无缝结合，你去超市或者在复杂的商业街寻找餐馆，你不用再打开地图或者大众点评，你眼前就是信息与现实的结合体；如果你用过nokia的city lens，你一定知道我在说什么。你不用再厚着脸皮去找心仪的妹子要联系方式了，只要她在社交网络公开信息，你盯着她看几秒可能就已经加了她的微信或者facebook了。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;因为“所见即所得”，你所能看到的美景都可以收入囊中，不会再因为掏出手机解锁打开相机应用而错过稍众即逝的美景。当然，google glass现在因为这个产生的隐私问题而备受争议。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;……还有很大的想象空间，只是我想不出来了。但是如果做到以上3点，你完全可以抛弃你的智能机了。&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;　以上，并不是空穴来风的天方夜谭，不信，你试着在手表上想象一下。这些是基于信息展现方式，或者说是交互方式的革新。google glass目前并不足以产生颠覆性，产品还不完善，技术也难以突破，生态更是一片荒芜，但它叩开了一个全新世界的大门，这个大门后面的世界才是未来。说实话，我更期待苹果和微软在这方面的突破。&lt;/p&gt;
+
+&lt;h3&gt;&lt;strong&gt;机器人&lt;/strong&gt;&lt;/h3&gt;
+
+&lt;p&gt;　这条路任重而道远，真的要发展出人工智能的话，很可能要对现有的计算机体系、软硬架构、甚至编程思想统统进行颠覆才有可能。但是，100年后每个人身边陪着个高度智能的机器人作助手甚至伴侣应该没什么好争议的。那时候什么手机电脑手表眼镜通通可以扔掉了，人可以真正得到解放，这个随时随地跟着你的机器人就是你最好最强大的电子设备了。你要打电话，你就跟它说帮我call一下奥巴马；你要玩游戏，它转过身来可能后背就是一块触摸屏；你要写代码，哦，那时候应该不用写代码了……&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/04/21/future</link>
+                <guid>http://enml.github.io/blog/2014/04/21/future</guid>
+                <pubDate>2014-04-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>拼图游戏</title>
+                <description>&lt;h1&gt;拼图游戏&lt;/h1&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>http://enml.github.io/blog/2014/03/29/puzzle</link>
+                <guid>http://enml.github.io/blog/2014/03/29/puzzle</guid>
+                <pubDate>2014-03-29T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript排序算法</title>
+                <description>&lt;h1&gt;javascript排序算法(转)&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;1、插入排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt; 1）算法简介&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　插入排序（Insertion-Sort）的算法描述是一种简单直观的排序算法。它的工作原理是通过构建有序序列，对于未排序数据，在已排序序列中从后向前扫描，找到相应位置并插入。插入排序在实现上，通常采用in-place排序（即只需用到O(1)的额外空间的排序），因而在从后向前扫描过程中，需要反复把已排序元素逐步向后挪位，为最新元素提供插入空间。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）算法描述和实现　&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;一般来说，插入排序都采用in-place在数组上实现。具体算法描述如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;从第一个元素开始，该元素可以认为已经被排序；&lt;/li&gt;
+&lt;li&gt;取出下一个元素，在已经排序的元素序列中从后向前扫描；&lt;/li&gt;
+&lt;li&gt;如果该元素（已排序）大于新元素，将该元素移到下一位置；&lt;/li&gt;
+&lt;li&gt;重复步骤3，直到找到已排序的元素小于或者等于新元素的位置；&lt;/li&gt;
+&lt;li&gt;将新元素插入到该位置后；&lt;/li&gt;
+&lt;li&gt;重复步骤2~5。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function insertionSort(array) {
+    if (Object.prototype.toString.call(array).slice(8, -1) === &#39;Array&#39;) {
+        for (var i = 1; i &amp;lt; array.length; i++) {
+            var key = array[i];
+            var j = i - 1;
+            while (j &amp;gt;= 0 &amp;amp;&amp;amp; array[j] &amp;gt; key) {
+                array[j + 1] = array[j];
+                j--;
+            }
+            array[j + 1] = key;
+        }
+        return array;
+    } else {
+        return &#39;array is not an Array!&#39;;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）算法分析&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;最佳情况：输入数组按升序排列。T(n) = O(n)
+最坏情况：输入数组按降序排列。T(n) = O(n2)
+平均情况：T(n) = O(n2)&lt;/p&gt;
+
+&lt;h2&gt;二、二分插入排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）算法简介&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　二分插入（Binary-insert-sort)排序是一种在直接插入排序算法上进行小改动的排序算法。其与直接插入排序算法最大的区别在于查找插入位置时使用的是二分查找的方式，在速度上有一定提升。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）算法描述和实现&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;一般来说，插入排序都采用in-place在数组上实现。具体算法描述如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;从第一个元素开始，该元素可以认为已经被排序；&lt;/li&gt;
+&lt;li&gt;取出下一个元素，在已经排序的元素序列中二分查找到第一个比它大的数的位置；&lt;/li&gt;
+&lt;li&gt;将新元素插入到该位置后；&lt;/li&gt;
+&lt;li&gt;重复上述两步。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function binaryInsertionSort(array) {
+    if (Object.prototype.toString.call(array).slice(8, -1) === &#39;Array&#39;) {
+        for (var i = 1; i &amp;lt; array.length; i++) {
+            var key = array[i], left = 0, right = i - 1;
+            while (left &amp;lt;= right) {
+                var middle = parseInt((left + right) / 2);
+                if (key &amp;lt; array[middle]) {
+                    right = middle - 1;
+                } else {
+                    left = middle + 1;
+                }
+            }
+            for (var j = i - 1; j &amp;gt;= left; j--) {
+                array[j + 1] = array[j];
+            }
+            array[left] = key;
+        }
+        return array;
+    } else {
+        return &#39;array is not an Array!&#39;;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）算法分析&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;最佳情况：T(n) = O(nlogn)
+最差情况：T(n) = O(n2)
+平均情况：T(n) = O(n2)&lt;/p&gt;
+
+&lt;h2&gt;三、选择排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）算法简介&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　选择排序(Selection-sort)是一种简单直观的排序算法。它的工作原理：首先在未排序序列中找到最小（大）元素，存放到排序序列的起始位置，然后，再从剩余未排序元素中继续寻找最小（大）元素，然后放到已排序序列的末尾。以此类推，直到所有元素均排序完毕。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）算法描述和实现&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　n个记录的直接选择排序可经过n-1趟直接选择排序得到有序结果。具体算法描述如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;初始状态：无序区为R[1..n]，有序区为空；&lt;/li&gt;
+&lt;li&gt;第i趟排序(i=1,2,3...n-1)开始时，当前有序区和无序区分别为R[1..i-1]和R(i..n）。该趟排序从当前无序区中选出关键字最小的记录 R[k]，将它与无序区的第1个记录R交换，使R[1..i]和R[i+1..n)分别变为记录个数增加1个的新有序区和记录个数减少1个的新无序区；&lt;/li&gt;
+&lt;li&gt;n-1趟结束，数组有序化了。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function selectionSort(array) {
+    if (Object.prototype.toString.call(array).slice(8, -1) === &#39;Array&#39;) {
+        var len = array.length, temp;
+        for (var i = 0; i &amp;lt; len - 1; i++) {
+            var min = array[i];
+            for (var j = i + 1; j &amp;lt; len; j++) {
+                if (array[j] &amp;lt; min) {
+                    temp = min;
+                    min = array[j];
+                    array[j] = temp;
+                }
+            }
+            array[i] = min;
+        }
+        return array;
+    } else {
+        return &#39;array is not an Array!&#39;;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）算法分析&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;最佳情况：T(n) = O(n2)
+最差情况：T(n) = O(n2)
+平均情况：T(n) = O(n2)&lt;/p&gt;
+
+&lt;h2&gt;四、冒泡排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）算法简介&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　冒泡排序是一种简单的排序算法。它重复地走访过要排序的数列，一次比较两个元素，如果它们的顺序错误就把它们交换过来。走访数列的工作是重复地进行直到没有再需要交换，也就是说该数列已经排序完成。这个算法的名字由来是因为越小的元素会经由交换慢慢“浮”到数列的顶端。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）算法描述和实现&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;具体算法描述如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;比较相邻的元素。如果第一个比第二个大，就交换它们两个；&lt;/li&gt;
+&lt;li&gt;对每一对相邻元素作同样的工作，从开始第一对到结尾的最后一对，这样在最后的元素应该会是最大的数；&lt;/li&gt;
+&lt;li&gt;针对所有的元素重复以上的步骤，除了最后一个；&lt;/li&gt;
+&lt;li&gt;重复步骤1~3，直到排序完成。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;pre&gt;&lt;code&gt;function bubbleSort(array) {
+    if (Object.prototype.toString.call(array).slice(8, -1) === &#39;Array&#39;) {
+        var len = array.length, temp;
+        for (var i = 0; i &amp;lt; len - 1; i++) {
+            for (var j = len - 1; j &amp;gt;= i; j--) {
+                if (array[j] &amp;lt; array[j - 1]) {
+                    temp = array[j];
+                    array[j] = array[j - 1];
+                    array[j - 1] = temp;
+                }
+            }
+        }
+        return array;
+    } else {
+        return &#39;array is not an Array!&#39;;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）算法分析&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;最佳情况：T(n) = O(n)
+最差情况：T(n) = O(n2)
+平均情况：T(n) = O(n2)&lt;/p&gt;
+
+&lt;h2&gt;五、快速排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）算法简介&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　快速排序的基本思想：通过一趟排序将待排记录分隔成独立的两部分，其中一部分记录的关键字均比另一部分的关键字小，则可分别对这两部分记录继续进行排序，以达到整个序列有序。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）算法描述和实现&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;快速排序使用分治法来把一个串（list）分为两个子串（sub-lists）。具体算法描述如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;从数列中挑出一个元素，称为 &quot;基准&quot;（pivot）；&lt;/li&gt;
+&lt;li&gt;重新排序数列，所有元素比基准值小的摆放在基准前面，所有元素比基准值大的摆在基准的后面（相同的数可以到任一边）。3. 在这个分区退出之后，该基准就处于数列的中间位置。这个称为分区（partition）操作；&lt;/li&gt;
+&lt;li&gt;递归地（recursive）把小于基准值元素的子数列和大于基准值元素的子数列排序。&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2014/03/08/sorting</link>
+                <guid>http://enml.github.io/blog/2014/03/08/sorting</guid>
+                <pubDate>2014-03-08T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript：正则表达式</title>
+                <description>&lt;h1&gt;javascript：正则表达式&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h3&gt;这是一段检测浏览器名称及版本号的代码，里面涉及到正则表达式的匹配&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;function detectBrowser(){
+    var ua = navigator.userAgent.toLowerCase();
+    var reg = /(opera|firefox|chrome|safari|msie|trident(?=\/))\/?\s*([\d.]+)/i;
+    var result = reg.exec(ua);
+    if(result[1] == &quot;trident&quot;){result[2] = ua.match(/\brv\:\s*([\d.]+)/)[1];result[1]=&quot;IE&quot;;}
+    return [result[1],result[2]];
+}
+alert(&#39;浏览器:&#39;+detectBrowser()[0]+&quot; &quot;+detectBrowser()[1]);
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/11/13/js-regexp</link>
+                <guid>http://enml.github.io/blog/2013/11/13/js-regexp</guid>
+                <pubDate>2013-11-13T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript的比较规则(转)</title>
+                <description>&lt;h1&gt;javascript的比较规则(转)&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;抽象相等比较算法&lt;/h2&gt;
+
+&lt;p&gt;比较运算 x==y, 其中 x 和 y 是值，产生 true 或者 false。这样的比较按如下方式进行：&lt;/p&gt;
+
+&lt;p&gt;若 Type(x) 与 Type(y) 相同， 则&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;若 Type(x) 为 Undefined， 返回 true。&lt;/li&gt;
+&lt;li&gt;若 Type(x) 为 Null， 返回 true。&lt;/li&gt;
+&lt;li&gt;若 Type(x) 为 Number， 则&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;若 x 为 NaN， 返回 false。
+若 y 为 NaN， 返回 false。
+若 x 与 y 为相等数值， 返回 true。
+若 x 为 +0 且 y 为 −0， 返回 true。
+若 x 为 −0 且 y 为 +0， 返回 true。
+返回 false。
+若 Type(x) 为 String, 则当 x 和 y 为完全相同的字符序列（长度相等且相同字符在相同位置）时返回 true。 否则， 返回 false。
+若 Type(x) 为 Boolean, 当 x 和 y 为同为 true 或者同为 false 时返回 true。 否则， 返回 false。
+当 x 和 y 为引用同一对象时返回 true。否则，返回 false。
+若 x 为 null 且 y 为 undefined， 返回 true。
+若 x 为 undefined 且 y 为 null， 返回 true。
+若 Type(x) 为 Number 且 Type(y) 为 String， 返回 comparison x == ToNumber(y) 的结果。
+若 Type(x) 为 String 且 Type(y) 为 Number，
+返回比较 ToNumber(x) == y 的结果。
+若 Type(x) 为 Boolean， 返回比较 ToNumber(x) == y 的结果。
+若 Type(y) 为 Boolean， 返回比较 x == ToNumber(y) 的结果。
+若 Type(x) 为 String 或 Number，且 Type(y) 为 Object，返回比较 x == ToPrimitive(y) 的结果。
+若 Type(x) 为 Object 且 Type(y) 为 String 或 Number， 返回比较 ToPrimitive(x) == y 的结果。
+返回 false。
+注：按以上相等之定义：&lt;/p&gt;
+
+&lt;p&gt;字符串比较可以按这种方式强制执行: &quot;&quot; + a == &quot;&quot; + b。
+数值比较可以按这种方式强制执行: +a == +b。
+布尔值比较可以按这种方式强制执行: !a == !b。
+注：等值比较操作保证以下不变：&lt;/p&gt;
+
+&lt;p&gt;A != B 等价于 !(A==B)。
+A == B 等价于 B == A，除了 A 与 B 的执行顺序。
+注：相等运算符不总是传递的。 例如，两个不同的 String 对象，都表示相同的字符串值；== 运算符认为每个 String 对象都与字符串值相等，但是两个字符串对象互不相等。例如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;new String(&quot;a&quot;) == &quot;a&quot;&lt;/code&gt; 和&lt;code&gt;&quot;a&quot; == new String(&quot;a&quot;)&lt;/code&gt; 皆为 true。
+&lt;code&gt;new String(&quot;a&quot;) == new String(&quot;a&quot;)&lt;/code&gt; 为 false。
+字符串比较使用的方式是简单地检测字符编码单元序列是否相同。不会做更复杂的、基于语义的字符或者字符串相等的定义以及 Unicode 规范中定义的 collating order。所以 Unicode 标准中认为相等的 String 值可能被检测为不等。实际上这一算法认为两个字符串已经是经过规范化的形式。&lt;/p&gt;
+
+&lt;h2&gt;严格等于比较算法&lt;/h2&gt;
+
+&lt;p&gt;比较 x===y，x 和 y 为值，需要产出 true 或 false。比较过程如下：&lt;/p&gt;
+
+&lt;p&gt;如果 Type(x) 与 Type(y) 的结果不一致，返回 false，否则
+如果 Type(x) 结果为 Undefined，返回 true
+如果 Type(x) 结果为 Null，返回 true
+如果 Type(x) 结果为 Number，则&lt;/p&gt;
+
+&lt;p&gt;如果 x 为 NaN，返回 false
+如果 y 为 NaN，返回 false
+如果 x 与 y 为同一个数字，返回 true
+如果 x 为 +0，y 为 -0，返回 true
+如果 x 为 -0，y 为 +0，返回 true
+返回 false
+如果 Type(x) 结果为 String，如果 x 与 y 为完全相同的字符序列（相同的长度和相同的字符对应相同的位置），返回 true，否则，返回 false
+如果 Type(x) 结果为 Boolean，如果 x 与 y 都为 true 或 false，则返回 true，否则，返回 false
+如果 x 和 y 引用到同一个 Object 对象，返回 true，否则，返回 false&lt;/p&gt;
+
+&lt;p&gt;注：文章引用自[http://www.ecma-international.org/ecma-262/5.1/#sec-11.9.3]&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/11/02/js-compare</link>
+                <guid>http://enml.github.io/blog/2013/11/02/js-compare</guid>
+                <pubDate>2013-11-02T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript：判断变量类型</title>
+                <description>&lt;h1&gt;javascript：判断变量类型&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;javascript中的变量类型是松散类型的，因而一个变量可以声明数字、布尔值、字符串等，如何检测一个变量的数据类型呢？常用的方法有一下几种：&lt;/p&gt;
+
+&lt;h3&gt;typeof操作符判断&lt;/h3&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var obj = {key:&#39;value&#39;},
+    arr = [&quot;hello&quot;,&quot;javascript&quot;],
+    fn  = function(){},
+    str = &quot;hello js&quot;,
+    num = 55,
+    bool = true,
+    User = function(){},
+    user = new User();
+/*typeof测试*/
+console.log(typeof obj);    //obj
+console.log(typeof arr);    //obj
+console.log(typeof fn);     //function
+console.log(typeof str);    //string
+console.log(typeof num);    //number
+console.log(typeof bool);   //boolean
+console.log(typeof user);   //object
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;缺点：不能很好的区分Object类型。*&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h3&gt;构造函数属性来判断&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var obj = {key:&#39;value&#39;},
+    arr = [&quot;hello&quot;,&quot;javascript&quot;],
+    fn  = function(){},
+    str = &quot;hello js&quot;,
+    num = 55,
+    bool = true,
+    User = function(){},
+    user = new User();
+/*constructor测试*/
+console.log(obj.constructor == Object); //true
+console.log(arr.constructor == Array);  //true
+console.log(str.constructor == String); //true
+console.log(num.constructor == Number); //true
+console.log(bool.constructor == Boolean);//true
+console.log(user.constructor == User);  //true
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;toString函数来判断&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var obj = {key:&#39;value&#39;},
+arr = [&quot;hello&quot;,&quot;javascript&quot;],
+fn  = function(){},
+str = &quot;hello js&quot;,
+num = 55,
+bool = true,
+User = function(){},
+user = new User();
+console.log(Object.prototype.toString.apply(obj));  //[object Object]
+console.log(Object.prototype.toString.apply(arr));  //[object Array]
+console.log(Object.prototype.toString.apply(fn));   //[object Function]
+console.log(Object.prototype.toString.apply(str));  //[object String]
+console.log(Object.prototype.toString.apply(num));  //[object Number]
+console.log(Object.prototype.toString.apply(bool)); //[object Boolean]
+console.log(Object.prototype.toString.apply(user)); //[object Object]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;Object.prototype.toString.apply(obj)等效obj.toString()&lt;/code&gt;。从原型链来理解的话，obj的 toString 方法是继承自 Object.prototype的。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/10/17/javascript-typeof</link>
+                <guid>http://enml.github.io/blog/2013/10/17/javascript-typeof</guid>
+                <pubDate>2013-10-17T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript：内存泄漏</title>
+                <description>&lt;h1&gt;javascript：内存泄漏&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;一、静态分配( Static Allocation ):静态变量和全局变量的分配形式.如果把房间看做一个程序,我们可以把静态分配的内存当成是房间里的耐用家具.通常,它们无需释放和回收,因为没人会天天把大衣柜当作垃圾扔到窗外.&lt;/p&gt;
+
+&lt;p&gt;二、自动分配( Automatic Allocation ):在栈中为局部变量分配内存的方法.栈中的内存可以随着代码块退出时的出栈操作被自动释放.这类似于到房间中办事的人,事情一旦完成,就会自己离开,而他们所占用的空间,也随着这些人的离开而自动释放了.&lt;/p&gt;
+
+&lt;p&gt;三、动态分配( Dynamic Allocation ):在堆中动态分配内存空间以存储数据的方式.也就是程序运行时用malloc或new申请的内存,我们需要自己用free或delete释放.动态内存的生存期由程序员自己决定.一旦忘记释放,势必造成内存泄露.这种情况下,堆中的内存块好像我们日常使用的餐巾纸,用过了&lt;!--break--&gt;就得扔到垃圾箱里,否则屋内就会满地狼藉.因此,懒人们做梦都想有一台家用机器人跟在身边打扫卫生.在软件开发中,如果你懒得释放内存,那么你也需要一台类似的机器人——这其实就是一个由特定算法实现的垃圾收集器.而正是垃圾收集机制本身的一些缺陷,导致了javascript内存泄露.
+JavaScript 是一种垃圾收集式语言，这就是说，内存是根据对象的创建分配给该对象的，并会在没有对该对象的引用时由浏览器收回。JavaScript 的垃圾收集机制本身并没有问题，但浏览器在为 DOM 对象分配和恢复内存的方式上却有些出入。&lt;/p&gt;
+
+&lt;h3&gt;1. 循环引用&lt;/h3&gt;
+
+&lt;p&gt;IE浏览器的COM组件产生的对象实例和网页脚本引擎产生的对象实例相互引用，就会造成内存泄漏。这也是Web页面中我们遇到的最常见和主要的泄漏方式；&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;&lt;html&gt;
+&lt;body&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+    document.write(&quot;Circular references between JavaScript and DOM!&quot;);
+    var obj;
+    window.onload = function(){
+    obj=document.getElementById(&quot;DivElement&quot;);
+    document.getElementById(&quot;DivElement&quot;).expandoProperty=obj;
+    obj.bigString=new Array(1000).join(new Array(2000).join(&quot;XXXXX&quot;));
+    };
+&lt;/script&gt;
+
+
+&lt;div id=&quot;DivElement&quot;&gt;Div Element&lt;/div&gt;
+
+
+&lt;p&gt;&lt;/body&gt;
+&lt;/html&gt;
+```&lt;/p&gt;
+
+&lt;h3&gt;2. 调用外部函数&lt;/h3&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;&lt;html&gt;
+&lt;head&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+    document.write(&quot;Circular references between JavaScript and DOM!&quot;);
+    function myFunction(element)
+    {
+        this.elementReference = element;
+        // This code forms a circular reference here
+        //by DOM--&gt;JS--&gt;DOM
+        element.expandoProperty = this;
+    }
+    function Leak() {
+        //This code will leak
+        new myFunction(document.getElementById(&quot;myDiv&quot;));
+    }
+&lt;/script&gt;
+
+
+&lt;p&gt;&lt;/head&gt;
+&lt;body onload=&quot;Leak()&quot;&gt;&lt;/p&gt;
+
+&lt;div id=&quot;myDiv&quot;&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;/body&gt;
+&lt;/html&gt;
+```&lt;/p&gt;
+
+&lt;h3&gt;3. 闭包&lt;/h3&gt;
+
+&lt;p&gt;由于闭包函数会使程序员在不知不觉中创建出循环引用，所以它对资源泄漏常常有着不可推卸的责任。而在闭包函数自己被释放前，我们很难判断父函数的参数以及它的局部变量是否能被释放。实际上闭包函数的使用已经很普通，以致人们频繁的遇到这类问题时我们却束手无策。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+function parentFunction(paramA) {
+        var a = paramA;
+        function childFunction(){
+        return a + 2;
+        }
+        return childFunction();
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;如何解决Javascript内存泄露&lt;/h2&gt;
+
+&lt;h3&gt;1. 破解循环引用&lt;/h3&gt;
+
+&lt;p&gt;```
+&lt;html&gt;
+&lt;body&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+document.write(&quot;Avoiding memory leak via closure by breaking the circular
+reference&quot;);
+    window.onload=function outerFunction(){
+    var obj = document.getElementById(&quot;element&quot;);
+    obj.onclick=function innerFunction()
+    {
+        alert(&quot;Hi! I have avoided the leak&quot;);
+        // Some logic here
+    };
+    obj.bigString=new Array(1000).join(new Array(2000).join(&quot;XXXXX&quot;));
+    obj = null; //This breaks the circular reference
+    };
+&lt;/script&gt;
+
+
+&lt;p&gt;&lt;button id=&quot;element&quot;&gt;&quot;Click Here&quot;&lt;/button&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+```&lt;/p&gt;
+
+&lt;h3&gt;2. 添加另一个闭包&lt;/h3&gt;
+
+&lt;p&gt;```
+&lt;html&gt;
+&lt;body&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+document.write(&quot;Avoiding a memory leak by adding another closure&quot;);
+window.onload=function outerFunction(){
+var anotherObj = function innerFunction()
+         {
+            // Some logic here
+            alert(&quot;Hi! I have avoided the leak&quot;);
+         };
+     (function anotherInnerFunction(){
+        var obj =  document.getElementById(&quot;element&quot;);
+        obj.onclick=anotherObj })();
+        };
+&lt;/script&gt;
+
+
+&lt;p&gt;&lt;button id=&quot;element&quot;&gt;&quot;Click Here&quot;&lt;/button&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+```&lt;/p&gt;
+
+&lt;h3&gt;3. 避免闭包&lt;/h3&gt;
+
+&lt;p&gt;```
+&lt;html&gt;
+&lt;head&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+document.write(&quot;Avoid leaks by avoiding closures!&quot;);
+window.onload=function()
+{
+    var obj = document.getElementById(&quot;element&quot;);
+    obj.onclick = doesNotLeak;
+}
+function doesNotLeak()
+{
+    //Your Logic here
+    alert(&quot;Hi! I have avoided the leak&quot;);
+}
+
+&lt;/script&gt;
+
+
+&lt;p&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;button id=&quot;element&quot;&gt;&quot;Click Here&quot;&lt;/button&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+```&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/09/26/js-leak</link>
+                <guid>http://enml.github.io/blog/2013/09/26/js-leak</guid>
+                <pubDate>2013-09-26T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript的调用方法</title>
+                <description>&lt;h1&gt;javascript的调用方法&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;script标签&lt;/h2&gt;
+
+&lt;p&gt;最基本，最常用的脚本引入方式。例如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;&amp;lt;script src=&quot;http://code.jquery.com/jquery-1.11.0.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;尽管在HTML4和XHTML里面，要求开发者使用type属性来制定脚本的类型。但是主流浏览器都默认认为脚本类型是text/javascript。&lt;/p&gt;
+
+&lt;p&gt;在HTML5的规范内1，script标签的type属性是完全可选的。&lt;/p&gt;
+
+&lt;h2&gt;eval函数&lt;/h2&gt;
+
+&lt;p&gt;eval is evil
+eval有访问本地scope的权利&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var a = 1;
+eval(&quot;a=2&quot;);
+a === 2; // ==&amp;gt; true
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;Function构造函数&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;function是“first-class citizen”；自然有相应的构造函数&lt;/li&gt;
+&lt;li&gt;new Function(arg1, arg2, ..., fnStr)&lt;/li&gt;
+&lt;li&gt;Function3构造函数本质是创建一个函数对象；其创建的函数执行也并不能访问其所在创建环境的闭包，只能访问本地作用域（local scope）和全局作用域（global scope）&lt;/li&gt;
+&lt;li&gt;Function()和new Function()效果一样&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;(function() {
+  var a = 1;
+  var func = new Function(&quot;a=2&quot;);
+  func();
+  a === 2; // ==&amp;gt; false
+}());
+a === 2; // ==&amp;gt; true
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;setTimeout和setInterval&lt;/h2&gt;
+
+&lt;p&gt;setTimeout(&quot;alert(&#39;haha&#39;)&quot;, 0);
+这个和eval有异曲同工之妙，对作用域的访问也是类似的。&lt;/p&gt;
+
+&lt;p&gt;以上除了script标签的方法之外，其他方法都在strict模式下不可用。&lt;/p&gt;
+
+&lt;h2&gt;HTML內联事件回调&lt;/h2&gt;
+
+&lt;p&gt;&lt;code&gt;&amp;lt;a href=&#39;#hello&#39; onclick=&quot;alert(this.href)&quot;&amp;gt;Say hello&amp;lt;/a&amp;gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;这样如同在click事件的Target Phase运行了一个回调。this指向目标元素本身。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/09/21/js-start</link>
+                <guid>http://enml.github.io/blog/2013/09/21/js-start</guid>
+                <pubDate>2013-09-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript的加载规则</title>
+                <description>&lt;h1&gt;javascript的加载规则&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;以下代码，最终会产生三个alert依次为“A”、“B”、“C”。&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;!-- HTML Code --&gt;
+
+
+&lt;script&gt;alert(&quot;A&quot;);&lt;/script&gt;
+
+
+&lt;script&gt;alert(&quot;B&quot;);&lt;/script&gt;
+
+
+&lt;script&gt;alert(&quot;C&quot;);&lt;/script&gt;
+
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;我们再考虑有网络请求的情况2：&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;!-- HTML code --&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/7b08744009c450e07c0bfc1d606fc72e/&quot;&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/a2e8c05c1f6fc0e47d259aa899304e89/&quot;&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/4fab3017d3d46cbfc4bbd88aab006650/&quot;&gt;&lt;/script&gt;
+
+
+&lt;pre&gt;&lt;code&gt;
+三个文件都需要先下载再运行，且第二个文件的尺寸远大于另外两个文件。但结果依然是弹出三个alert，内容分别是”A”、”B”、”C”。
+javascript脚本一般情况有三种嵌入页面的方式：
+
+* 把它放在head标签内。在下载script引入的外部脚本时，浏览器处于阻塞状态，网络不好或者script文件过大时，页面处于空白停顿状态，体验是并不够好。
+* 把它放入页面底部。这是大家公认的提高前端页面性能和体验的方法，但还是存在一定的问题，放在页面底部的脚本是要等到页面文档流下载完毕才去下载、执行，页面中的交互会存在一个延迟的时间去实现。虽然页面显示时间变短了，但交互却被延后了。体验也不够好。
+* 按需执行。在head标签内引入部分公共脚本，在每一个需要交互的HTML元素之后插入script立即执行，需要特定条件才执行的脚本放到页面最底部。这也不是一个完美的解决方案，一则页面内穿插过多的script标签引起维护不便，二来底部脚本还未加载完时用户便触发了某个条件该怎么办？虽有方法实现，但体验仍不够好。
+
+为了解决以上问题，我们要想办法实现脚本的异步执行。
+
+### 动态创建`&amp;lt;script&amp;gt;`标签
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;script&gt; 
+var oScript= document.createElement(&quot;script&quot;); 
+oScript.type = &quot;text/javascript&quot;; 
+oScript.src=&quot;test.js&quot;; 
+document.body.appendChild( oScript); 
+&lt;/script&gt;
+
+
+&lt;p&gt;
+```&lt;/p&gt;
+
+&lt;p&gt;通过动态创建script标签，让脚本延迟执行。&lt;/p&gt;
+
+&lt;h3&gt;async属性&lt;/h3&gt;
+
+&lt;p&gt;async表示该script标签并不阻塞，也不同步执行。浏览器只需要在脚本下载完毕后再执行即可——不必阻塞页面渲染等待该脚本的下载和执行。
+如下代码，会得到三个alert，但是alert的内容分别是”A”,”C”,”B”。表明脚本二并没有阻塞脚本三的执行。原理跟方法1近似。&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;!-- HTML code --&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/7b08744009c450e07c0bfc1d606fc72e/&quot;&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/a2e8c05c1f6fc0e47d259aa899304e89/&quot; async=true&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/4fab3017d3d46cbfc4bbd88aab006650/&quot;&gt;&lt;/script&gt;
+
+
+&lt;pre&gt;&lt;code&gt;
+### defer属性
+
+带有defer属性的脚本，同样会推迟脚本的执行，并且不会阻止文档解析。就如同这个脚本，放置到了文档的末尾（&amp;lt;/body&amp;gt;之前）。
+
+如下代码的宏观现象和加了async属性的例子是一样的，都会得到”A”、”C”、”B”的三个alert。但是其原理是不一样的。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!-- HTML code --&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/7b08744009c450e07c0bfc1d606fc72e/&quot;&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/a2e8c05c1f6fc0e47d259aa899304e89/&quot; defer=true&gt;&lt;/script&gt;
+
+
+&lt;script  src=&quot;https://snipt.net/raw/4fab3017d3d46cbfc4bbd88aab006650/&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;p&gt;defer属性是会确保脚本在文档解析完毕后执行的——即使这个脚本在文档解析过程中就已经下载完毕变成可执行的状态，浏览器也会推迟这个脚本的执行，直到文档解析完毕。&lt;/p&gt;
+
+&lt;p&gt;同时，带有defer的脚本彼此之间，能保证其执行顺序。
+通过将script标签放置到文档末尾这种简单的做法达到defer属性一样的效果。&lt;/p&gt;
+
+&lt;p&gt;defer属性早在IE4就被支持，但是这个defer属性和现代浏览器的行为是有区别的。只有IE10以上，才开始按照标准执行defer属性。&lt;/p&gt;
+
+&lt;h3&gt;defer 和 async 的影响&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;仅有async属性，脚本会异步执行&lt;/li&gt;
+&lt;li&gt;仅有defer属性，脚本会在文档解析完毕后执行&lt;/li&gt;
+&lt;li&gt;两个属性都没有，脚本会被同步下载并执行，期间会柱塞文档解析&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2013/09/16/js-onload</link>
+                <guid>http://enml.github.io/blog/2013/09/16/js-onload</guid>
+                <pubDate>2013-09-16T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript——对象</title>
+                <description>&lt;h1&gt;javascript——对象&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;创建对象&lt;/h2&gt;
+
+&lt;h3&gt;对象直接量&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var o = {
+foo : &quot;bar&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;构造函数&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var o = new Object();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;h3&gt;原型继承&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var p = Object.create(o);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;类继承&lt;/h2&gt;
+
+&lt;p&gt;Javascript对象拥有自有属性和继承属性。&lt;/p&gt;
+
+&lt;p&gt;在查询对象o的属性x时，先查找o中的属性x，如果没找到，则查找o的原型对象中的x属性，直到查找到x或者一个原型是null的对象为止&lt;/p&gt;
+
+&lt;p&gt;在给对象o的x属性赋值时，如果o中已经有一个自有属性x，则改变x的值，若o中不存在属性x，则为o创建一个x属性并赋值&lt;/p&gt;
+
+&lt;p&gt;也就是说，只有在查询时原型链才会起作用。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var O = {
+x : 1
+};
+
+function P() {
+this.y = 2;
+}
+
+P.prototype = O;
+
+var t = new P();
+console.log(t);
+console.log(&#39;x&#39; in t);//true
+console.log(t.hasOwnProperty(&#39;x&#39;));//false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以使用in 或者 hasOwnProperty 来判断对象中是否存在属性。&lt;/p&gt;
+
+&lt;h2&gt;对象属性&lt;/h2&gt;
+
+&lt;h3&gt;遍历对象属性&lt;/h3&gt;
+
+&lt;p&gt;可以使用 for..in 来遍历对象的属性&lt;/p&gt;
+
+&lt;p&gt;使用for..in时会遍历到原型链上的属性。遍历顺序是以广度优先遍历&lt;/p&gt;
+
+&lt;p&gt;所以使用hasOwnProperty便可以判断是否是对象自有的属性。&lt;/p&gt;
+
+&lt;h3&gt;对象属性的特性&lt;/h3&gt;
+
+&lt;p&gt;使用Object.getOwnPropertyDescriptor()获取对象特定属性的描述符&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;可写性(writable) 表示对象属性是否可写&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;例如&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var o = {
+    foo : &#39;bar&#39;
+}
+
+Object.defineProperty(o, &quot;foo&quot;, { writable : false });
+
+o.foo = &#39;world&#39;;
+console.log(o.foo);//仍然输出bar
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;可枚举性(enumerable) 表示对象属性是否可枚举&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;例如
+Array中的length等属性的 enumerable是false，所以，&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;for (p in Array) {
+    console.log(p);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;什么也不输出&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;可配置性(configurable) 表示可否修改属性的可配置性和可枚举性&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;可以用Object.defineProperties来定义这些配置属性。&lt;/p&gt;
+
+&lt;p&gt;Object.defineProperty(o, &quot;foo&quot;, { writable : false });
+Get 表示获取对象属性的方法
+Set 表示设置对象属性的方法&lt;/p&gt;
+
+&lt;p&gt;示例&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var book = {
+    _year: 2004,
+    edition: 1
+};
+Object.defineProperty(book, &quot;year&quot;, {
+    get: function () {
+        console.log(&#39;get year&#39;);
+        return this._year;
+    },
+    set: function (newValue) {
+        console.log(&#39;set year&#39;);
+        if (newValue &amp;gt; 2004) {
+            this._year = newValue;
+            this.edition += newValue - 2004;
+        }
+    }
+});
+book.year = 2005;//控制台输出‘set year’
+console.log(book.year);//控制台输出‘get year’和year的值
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;对象方法&lt;/h2&gt;
+
+&lt;p&gt;toString 将对象转换成字符串，默认的转换会是[object Object]之类的东西，所以需要转成json格式的话可以用JSON.stringify&lt;/p&gt;
+
+&lt;p&gt;valueOf 需要将对象转换成其他类型的时候要用到。同样的，默认转换没什么值得说的。&lt;/p&gt;
+
+&lt;p&gt;可执行对象&lt;/p&gt;
+
+&lt;p&gt;通过如下方法可以创建一个可执行对象&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function bar(o) {
+    var f = function() { return &quot;Hello World!&quot;; }
+    o.__proto__ = f.__proto__;
+    f.__proto__ = o;
+    return f;
+}
+
+var o = { x: 5 };
+var foo = bar(o);
+
+console.log(foo());
+console.log(foo.x);
+console.log(typeof foo);//function
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;既可以当作对象来使用（有原型链），也可以当作函数来直接调用&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/09/08/js-object</link>
+                <guid>http://enml.github.io/blog/2013/09/08/js-object</guid>
+                <pubDate>2013-09-08T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>tools</title>
+                <description>&lt;h1&gt;工具箱&lt;/h1&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/08/20/tools</link>
+                <guid>http://enml.github.io/blog/2013/08/20/tools</guid>
+                <pubDate>2013-08-20T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript——数组</title>
+                <description>&lt;h1&gt;javascript——数组&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h3&gt;创建数组&lt;/h3&gt;
+
+&lt;p&gt;数组字面量 ：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var a = [1, 2, 3];
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;使用构造函数 :&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var a = new Array();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;数组本质上是object(type of [ ] == &#39;object&#39;);&lt;/p&gt;
+
+&lt;p&gt;所以要判断是不是数组，需要通过判断constructor。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt;&lt;code&gt;[].constructor//Array
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;数组长度&lt;/h3&gt;
+
+&lt;p&gt;使用&lt;code&gt;length&lt;/code&gt;属性获取元素的个数。
+数组的&lt;code&gt;length&lt;/code&gt;属性是可写的。当&lt;code&gt;length&lt;/code&gt;属性小于元素个数时，数组中索引值大于&lt;code&gt;length&lt;/code&gt;属性的元素会被删掉。&lt;/p&gt;
+
+&lt;h3&gt;数组元素的添加和删除&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;push&lt;/code&gt; ：从数组尾部添加&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;unshift&lt;/code&gt; ：从数组头部添加&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pop&lt;/code&gt; ：从尾部弹出&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;shift&lt;/code&gt; ：从头部弹出&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h3&gt;数组方法&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;join&lt;/code&gt; 将数组中所有元素转换成字符串并连接在一起&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;reverse&lt;/code&gt; 将数组中成员颠倒排序&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;sort&lt;/code&gt; 将数组元素排序，可以指定一个排序函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;contact&lt;/code&gt; 将数组连接起来&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;slice&lt;/code&gt; 返回指定数组的一个片段或子数组&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;splice&lt;/code&gt; 从数组中插入或删除元素&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var a = [1, 2, 3, 4];
+var b = a.splice(1,2);//a = 1,4,b = 2,3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;ECMAScript 5中的数组新方法&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;forEach&lt;/code&gt; 从头到尾遍历数组，为每个元素调用制定的函数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;map&lt;/code&gt; 把数组的每个元素传给指定的函数，并返回一个数组。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var a = [1, 2, 3];
+var b = a.map(function(x) {
+                        return x*x;
+                    }); 
+b = [1,4,9]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;filter&lt;/code&gt; 把数组的每个元素传给指定的函数，通过函数返回的布尔值决定是否在返回数组中添加该元素&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var a = [1, 2, 3];
+var b = a.filter(function(x){
+                        return x % 2 !== 0;
+                        });
+b = [1, 3]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;every&lt;/code&gt; 把数组的每个元素传给指定的函数，如果全部调用返回true则every函数返回true&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;some&lt;/code&gt; 把数组的每个元素传给指定的函数，如果有调用返回true则every函数返回true&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;reduce&lt;/code&gt; 用指定的函数对数组进行组合，生成单个值&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;pre&gt;&lt;code&gt;var a = [1, 2, 3];
+var b = a.reduce(function(x, y){
+                            return x + y;
+                        }, 0); 
+b = 6;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;indexOf/lastIndexOf&lt;/code&gt; 在整个数组中搜索指定的元素&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2013/08/11/javascript-array</link>
+                <guid>http://enml.github.io/blog/2013/08/11/javascript-array</guid>
+                <pubDate>2013-08-11T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript——函数</title>
+                <description>&lt;h1&gt;javascript——函数&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2&gt;定义&lt;/h2&gt;
+
+&lt;h2&gt;函数声明语句&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;function plus(x ,y) {
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;函数定义表达式&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;
+var plus = function (x, y) {
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;h2&gt;函数调用&lt;/h2&gt;
+
+&lt;h3&gt;作为函数调用&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;
+function a(){};
+a();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;作为方法调用&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;a={};
+a.x = function(){};
+a.x();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;通过call和apply间接调用函数(改变this)&lt;/h2&gt;
+
+&lt;p&gt;call 和 apply带有多个参数，call和apply把当前函数的this指向第一个参数给定的函数或对象中，并传递其余所有的参数作为当前函数的参数。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var O = function () {
+    this.foo  = &#39;hello&#39;;
+    this.hello = function () {
+        return &#39;world&#39;;
+    }
+};
+var fn = function () {
+    console.log(&#39;call&#39;, this);
+};
+
+var o = new O();
+fn.call(o);//此时fn的this指向o
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;call和apply的不同之处，在于call传递的参数是作为arguments依次传入的，例如&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;fn.call(o, 1, 2, 3);&lt;/code&gt;
+而apply传递的参数是以一个数组的方式传入的，例如
+&lt;code&gt;fn.apply(o, [1, 2, 3]);&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2&gt;参数&lt;/h2&gt;
+
+&lt;p&gt;当传入参数少于函数声明的参数时，留空的参数的值是undefined。&lt;/p&gt;
+
+&lt;p&gt;Javascript允许传入参数的个数大于声明时制定的参数个数。可以用arguments来访问这些参数&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+function f(){
+    var i;
+    for( i = 0; i &amp;lt; arguments.length ; i++) {
+        console.log(arguments[i]);
+    }
+}
+
+f(1,2,3,4,5,6);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;函数通过取得arguments的长度得到传入参数的个数，使用一个循环获取每一个参数。&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;arguments还有两个属性，callee和caller&lt;/li&gt;
+&lt;li&gt;callee表示正在执行的function对象，&lt;/li&gt;
+&lt;li&gt;caller表示调用当前function的function&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;例如&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function f(){
+    console.log(arguments.callee);//[Function: f]
+    console.log(arguments.callee.caller);[Function: g]
+    var i;
+    for( i = 0; i &amp;lt; arguments.length ; i++) {
+        console.log(arguments[i]);
+    }
+}
+
+function g(){
+    f(1,2,3,4,5,6);
+}
+
+g();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;callee 的重要用法之一是在匿名函数中实现递归&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;var result = function (x) {
+    if (x &amp;lt;= 1) return 1;
+    return x * arguments.callee(x - 1);
+}(3);
+
+console.log(result);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上例使用了一个匿名函数和callee实现了一个阶乘。&lt;/p&gt;
+
+&lt;h2&gt;作为值的函数&lt;/h2&gt;
+
+&lt;h3&gt;javascript中的函数可以作为值来传递&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;function square(x) {
+    return x * x;
+}
+
+var s = square;
+s(4);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;作为命名空间的函数&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;
+(function() {
+
+}());
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;闭包&lt;/h2&gt;
+
+&lt;p&gt;Javascript函数对象的内部状态不仅包含着函数的代码逻辑，还引用当前的作用域链。函数对象通过作用域链相互关联起来，函数体内部变量包含在函数作用域内，这就叫闭包。&lt;/p&gt;
+
+&lt;p&gt;例如&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var scope = &#39;global scope&#39;;
+function checkscope() {
+    var scope = &#39;local scope&#39;;
+    function f() { 
+        return scope;
+    }
+    return f;
+}
+
+checkscope()();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这段checkscope声明了一个局部变量，定义了一个函数f，函数f返回了这个局部变量的值，最后返回了这个函数f。在定义函数f的作用域外调用f，得到的返回仍然是函数f创建时所在的作用域的局部变量scope。&lt;/p&gt;
+
+&lt;p&gt;又例如&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var counter = (function() {
+    var count = 0;
+    return function () {
+        return count++ ;
+    }
+}());
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;代码定义了一个立即执行函数并返回给counter，这个函数定义了一个局部变量count，返回了一个子函数，该子函数每次调用，都会吧count加一并返回。&lt;/p&gt;
+
+&lt;h2&gt;函数中的this对象&lt;/h2&gt;
+
+&lt;p&gt;在一个对象中的this始终引用当前对象，但是在函数中，特别是在闭包中，this有一些特殊的行为。&lt;/p&gt;
+
+&lt;p&gt;函数中的this对象始终绑定在函数运行时的上下文环境上。所以在普通模式下调用一个全局函数，this始终指向window（客户端），在严格模式下调用一个全局函数，this始终是undefined&lt;/p&gt;
+
+&lt;p&gt;示例&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+var name = &quot;The Window&quot;;
+var object = {
+    name: &quot;My Object&quot;,
+    getNameFunc: function () {
+        return function () {
+            return this.name;
+        };
+    },
+    getName : function () {
+        return this.name;
+    }
+};
+
+console.log(object.getNameFunc()());
+console.log(object.getName());
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;getNameFunction()返回了一个匿名函数，这个匿名函数在调用的时候，上下文是window（浏览器中），所以在浏览器中输出的是the Window&lt;/p&gt;
+
+&lt;p&gt;而getName()调用的时候上下文是object，所以成功输出object的name&lt;/p&gt;
+
+&lt;p&gt;其实以上代码中
+&lt;code&gt;object.getNameFunc()()&lt;/code&gt;
+等效于&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var fnc = object.getNameFunc();//这时候的fnc已经脱离了object对象
+fnc();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;所以如果想要getNameFunction()正确返回Object的Name，需要在返回的匿名函数的闭包中保存在函数声明时的this，&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;getNameFunc: function () {
+        var that = this;
+        return function () {
+            return that.name;
+        };
+    }
+    ```
+这样就可以了。。
+
+## 函数柯里化
+
+函数柯里化是指，把接受多个参数的函数转换成接受一个单一参数的函数，并且返回接受余下的参数而且返回结果的新函数的技术。
+
+示例
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;var add1 = add.curry(1);
+console.log(add1(2));
+```&lt;/p&gt;
+
+&lt;p&gt;其中，add是接受两个参数的函数，add调用了curry返回一个只接受一个参数的新函数，之后调用add1便等效于调用add(1, 2);&lt;/p&gt;
+
+&lt;p&gt;javascript并不原生支持curry，可以用prototype来模拟&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+Function.prototype.curry = function () {
+    var slice = Array.prototype.slice,
+        args = slice.apply(arguments),
+        that = this;
+    return function () {
+        return that.apply(null, args.concat(slice.apply(arguments)));
+    };
+};
+
+
+function add(n1, n2) {
+    return n1 + n2;
+}
+
+var add1 = add.curry(1);
+console.log(add1(2));
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;curry创建了一个新函数，在新函数的闭包中保存了原先传递的参数。&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/08/03/javascript-function</link>
+                <guid>http://enml.github.io/blog/2013/08/03/javascript-function</guid>
+                <pubDate>2013-08-03T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript：预解析</title>
+                <description>&lt;h1&gt;javascript：预解析&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;pre&gt;&lt;code&gt;alert(a);//报错,不是undefined
+a = 0;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;alert(a);    //undefined
+var a = 0;  //&quot;var a&quot;得到hoisting
+alert(a);   //0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt;&lt;code&gt;alert(a);    //function a(){ alert(&#39;我是函数&#39;) }
+var a = &#39;我是变量&#39;; //hoisting
+function a(){ alert(&#39;我是函数&#39;) }   //hoisting,优先级高于var
+alert(a);  // 我是变量
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;var d ;
+alert(d);//：function d(){}
+var d = 1;//这里重新赋值，因此第二个alert的d=1；
+function d(){};//函数声明会hoisting，并且优先级高于var，因此第一个alert的d=function d(){}
+alert(d);//：1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;var d=1 ;
+alert(d);//：1
+function d(){};//函数声明会hoisting，但是被d=1赋值语句覆盖掉，因此两个都为d=1；
+alert(d);//：1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;alert(a);    //function a(){ alert(&#39;我是函数&#39;) }
+a++;    //强制转换为number，NaN
+alert(a);    //NaN, ++可以改变初始值
+var a = &#39;我是变量&#39;;
+function a(){ alert(&#39;我是函数&#39;) }
+alert(a) ;//我是变量
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;alert(a);    //undefined
+var a = 0;
+alert(a);    //0
+function fn(){
+    alert(a);    //undefined;遇到函数，重新进行预解析
+    var a = 2; //hoisting
+    alert(a);    //2
+}
+fn()
+alert(a);    //0,fn里面的a与全局的a不是同一作用域的
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;alert(a);    //undefined
+var a = 0;
+alert(a);    //0
+function fn(){
+    alert(a);    //0;因为没var, 所以这里的a会被看作是全局的,往上查找，找到a=0,所以是0，如果全局也没有就会报错
+    a = 2;  //没有var,此处为全局变量
+    alert(a);    //2
+}
+fn()
+alert(a);    //2,fn把这全局的a修改了
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;function fn(a){
+   alert(a);    //undefined,JS会把传参当作var一样对待,相当于在fn内部定义了一个变量--&amp;gt; var a;
+   a = 2;
+   alert(a);    //2,这里修改的不是全局的哦,改的是fn的局部变量哦
+}
+fn()
+alert(a);    //报错
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;function fn(a){
+   alert(a);    //3; 因为形参被赋值为3，类似于var a = 3,但又有所不同，见下一个例子
+   a = 2;
+   alert(a);    //2,这里修改的不是全局的哦,改的是fn的局部变量哦
+}
+fn(3)
+alert(a);    //报错
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;function fn(a){
+   alert(a);    //function a(){}。这里虽然传入参数a=3，但是还是被function声明覆盖掉了，这一点跟直接在最上面声明var a =3是不同的
+   a = 2;
+   function a(){};
+   alert(a);    //2,这里修改的不是全局的哦,改的是fn的局部变量哦
+}
+fn(3)
+alert(a);    //报错
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;function fn(a){
+    var a = 3;
+    alert(a);    //3; 直接通过=赋值是不会被function声明覆盖的
+    a = 2;
+    function a(){};
+    alert(a);    //2,这里修改的不是全局的哦,改的是fn的局部变量哦
+}
+fn()
+alert(a);    //报错
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;优先级：在作用域最顶端声明 &lt;code&gt;var a = 3&lt;/code&gt; &gt; hoisting &lt;code&gt;function a(){}&lt;/code&gt; &gt; 作用域顶端声明&lt;code&gt;var a&lt;/code&gt; = hoisting &lt;code&gt;var a = 3&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;script&gt;
+alert(a);    //报错，因为脚本执行是按顺序的，这里先被执行，下文的声明还未执行，故报错
+&lt;/script&gt;
+
+
+
+
+&lt;script&gt;
+alert(a);    //undefined
+var a = 0;
+alert(a);    //0
+&lt;/script&gt;
+
+
+&lt;pre&gt;&lt;code&gt;&lt;/code&gt;&lt;/pre&gt;
+
+&lt;script&gt;
+alert(a);    //undefined
+var a = 0;
+&lt;/script&gt;
+
+
+
+
+&lt;script&gt;
+alert(a);    //上文已经定义了a，因此此处弹出0。这也说明了两个script标签中的代码是处在同一作用域中，但执行先后的问题导致了无法把下面为执行的代码中的声明hoisting。
+&lt;/script&gt;
+
+
+&lt;p&gt;```&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/07/27/js-var</link>
+                <guid>http://enml.github.io/blog/2013/07/27/js-var</guid>
+                <pubDate>2013-07-27T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript函数总结</title>
+                <description>&lt;h1&gt;javascript函数总结&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;函数的调用方式：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　1. 普通调用：functionName(实际参数...)&lt;/p&gt;
+
+&lt;p&gt;　　2. 通过指向函数的变量去调用：&lt;/p&gt;
+
+&lt;p&gt;　　　　　　&lt;code&gt;var myVar = 函数名;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;　　　　　　&lt;code&gt;myVar(实际参数...);&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;函数返回值（return）：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　1. 当函数无明确返回值时，返回的值就是&quot;undefined&quot;。&lt;/p&gt;
+
+&lt;p&gt;　　2. 当函数有返回值时，返回值是什么就返回什么。&lt;/p&gt;
+
+&lt;p&gt;我们可以通过使用 return 语句实现将函数返回调用它的地方。&lt;/p&gt;
+
+&lt;p&gt;在使用 return 语句时，函数会停止执行，并返回指定的值。&lt;/p&gt;
+
+&lt;p&gt;ECMAScript所有函数的参数都是按值传递的，言下之意就是参数不会按引用传递。&lt;/p&gt;
+
+&lt;p&gt;PS：如果存在按引用传递的话，那么函数里的那个变量将会是全局变量，在外部也可以访问。&lt;/p&gt;
+
+&lt;p&gt;（1）值类型：数值、布尔值、null、undefined。
+（2）引用类型：对象、数组、函数。&lt;/p&gt;
+
+&lt;p&gt;引用类型值：指的是那些保存在堆内存中的对象，意思是，变量中保存的实际上只是一个指针，这个指针执行内存中的另一个位置，由该位置保存对象；&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;创建匿名函数：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function(){
+return ‘Lee’;     //单独的匿名函数是无法运行的，就算能运行也无法调用，因为没有名字
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这种匿名函数的用法在JQuery中非常多。直接声明一个匿名函数，立即使用。用匿名函数的好处就是省得定义一个用一次就不用的函数，而且免了命名冲突的问题，js中没有命名空间的概念，因此很容易函数名字冲突，一旦命名冲突以最后声明的为准。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;通过自执行来执行匿名函数：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;  (function (){         // (匿名函数)()；第一圆括号放匿名函数，第二个圆括号执行
+       alert(&#39;Lee&#39;);
+  })();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;把匿名函数自我执行的返回值赋给变量：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+    var box =  (function (){           
+           alert(&#39;Lee&#39;);
+      })(); 
+    alert(box);       //弹出”Lee”；
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;自我执行匿名函数的传参：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    (function (age){
+     alert(age);
+    })(100);          //弹出100
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;javascript创建动态函数：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;　　JavaScript支持创建动态函数，动态函数必须用Function对象来定义（Function是javascript中的一个对象，是固定不变的，规定Function对象的&quot;F&quot;必须大写，当是function的时候，我们知道是定义函数的时候所使用的一个关键字：function funName(x，y)，当是Function的时候（F大写的时候），我们知道是javascript中的对象）&lt;/p&gt;
+
+&lt;p&gt;创建动态函数的基本格式：var 变量名 = new Function(&quot;参数1&quot;，&quot;参数2&quot;，&quot;参数n&quot;，&quot;执行语句&quot;);
+看下面的一段代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var square = new Function (&quot;x&quot;,&quot;y&quot;,&quot;var sum ; sum = x+y;return sum;&quot;);
+alert(&quot;square(2,3)的结果是：&quot;+square(2,3));  //square(2,3)的结果是：5
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;square是动态创建的函数，在Function对象后面的括号里的每一部分内容都必须是字符串形式的，也就是说都必须用引号（&quot;&quot;或者是&#39;&#39;）括起来&lt;/p&gt;
+
+&lt;p&gt;这段代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var square = new Function (&quot;x&quot;,&quot;y&quot;,&quot;var sum ; sum = x+y;return sum;&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;和下面这段代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function square (x,y){
+          var sum;
+          sum = x+y;
+          return sum;
+     }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;是一摸一样的，只不过一个是动态函数，一个是静态函数。
+我们为什么要把代码分成一小段一小段的代码呢？，把一个字符串分成了若干个独立的字符串的优点就在于我们可以通过修改其中的某些字符串来随时改变函数的作用。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;回调函数：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;回调就是一个函数的调用过程。那么就从理解这个调用过程开始吧。函数a有一个参数，这个参数是个函数b，当函数a执行完以后执行函数b。那么这个过程就叫回调。&lt;/p&gt;
+
+&lt;p&gt;其实中文也很好理解：回调，回调，就是回头调用的意思。函数a的事先干完，回头再调用函数b。&lt;/p&gt;
+
+&lt;p&gt;这里必须清楚一点：函数b是你以参数形式传给函数a的，那么函数b就叫回调函数。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;关于方法和函数的区别：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;var arr = [1,2,3,4,5]
+var a =12;   // 变量：自由的
+arr.a= 5;     //属性：属于一个对象
+function show()     //函数：自由的
+{
+     alert(‘a’);
+}
+arr.fn = function()   //方法：属于一个对象
+{
+     alert(‘b’);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其实方法就是函数，只不过方法是有所属的对象。&lt;/p&gt;
+
+&lt;p&gt;我们所熟知的，将函数绑定到 click 事件
+语法：&lt;/p&gt;
+
+&lt;p&gt;$(selector).click(function)
+参数  描述
+function    可选。规定当发生 click 事件时运行的函数。
+这种形式在jquery中经常见到。&lt;/p&gt;
+
+&lt;p&gt;js全局函数：&lt;/p&gt;
+
+&lt;p&gt;全局函数与内置对象的属性或方法不是一个概念。全局函数它不属于任何一个内置对象。
+JavaScript 中包含以下 7 个全局函数，用于完成一些常用的功能：escape( )、eval( )、isFinite( )、isNaN( )、parseFloat( )、parseInt( )、unescape( )。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;函数的几个作用：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;作为一个类构造器使用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function class(){}
+class.prototype={};
+var item=new class(); 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;作为闭包使用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(function(){
+//独立作用域
+})(); 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;作为构造函数调用&lt;/p&gt;
+
+&lt;p&gt;所谓构造函数，就是通过这个函数生成一个新对象（object）。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        function test(){
+            this.x = 10;
+        }
+
+        var obj = new test();
+        alert(obj.x); //弹出 10；
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以使用 new 运算符结合像 Object()、Date() 和 Function() 这样的预定义的构造函数来创建对象并对其初始化。面向对象的编程其强有力的特征是定义自定义构造函数以创建脚本中使用的自定义对象的能力。创建了自定义的构造函数，这样就可以创建具有已定义属性的对象。下面是自定义函数的示例（注意 this 关键字的使用）。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;function Circle (xPoint, yPoint, radius) {
+    this.x = xPoint;  // 圆心的 x 坐标。
+    this.y = yPoint;  // 圆心的 y 坐标。
+    this.r = radius;  // 圆的半径。
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;调用 Circle 构造函数时，给出圆心点的值和圆的半径（所有这些元素是完全定义一个独特的圆对象所必需的）。结束时 Circle 对象包含三个属性。&lt;code&gt;var aCircle = new Circle(5, 11, 99);&lt;/code&gt;&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/07/11/js-function</link>
+                <guid>http://enml.github.io/blog/2013/07/11/js-function</guid>
+                <pubDate>2013-07-11T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript：innerHTML</title>
+                <description>&lt;h1&gt;javascript：innerHTML&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;div id=&quot;test&quot;&gt;
+   &lt;span style=&quot;color:red&quot;&gt;hello&lt;/span&gt; world!
+&lt;/div&gt;
+
+
+&lt;p&gt;&lt;a href=&quot;javascript:alert(test.innerHTML)&quot;&gt;innerHTML内容&lt;/a&gt;
+&lt;a href=&quot;javascript:alert(test.innerText)&quot;&gt;inerText内容&lt;/a&gt;
+&lt;a href=&quot;javascript:alert(test.outerHTML)&quot;&gt;outerHTML内容&lt;/a&gt;
+```&lt;/p&gt;
+
+&lt;p&gt;以上代码很好的说明了&lt;code&gt;innerHTML&lt;/code&gt;、&lt;code&gt;innerText&lt;/code&gt;、&lt;code&gt;outerHTML&lt;/code&gt;的功能。
+* &lt;code&gt;test.innerHTML&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;　　也就是从对象的起始位置到终止位置的全部内容,包括Html标签。&lt;/p&gt;
+
+&lt;p&gt;　　上例中的test.innerHTML的值也就是“&lt;code&gt;&amp;lt;span style=&quot;color:red&quot;&amp;gt;hello&amp;lt;/span&amp;gt; world!&lt;/code&gt;”。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;test.innerText&lt;/code&gt;:&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;　　从起始位置到终止位置的内容, 但它去除Html标签&lt;/p&gt;
+
+&lt;p&gt;　　上例中的test.innerText的值也就是“&lt;code&gt;hello world!&lt;/code&gt;”, 其中span标签去除了。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;test.outerHTML&lt;/code&gt;:&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;　　除了包含innerHTML的全部内容外, 还包含对象标签本身。&lt;/p&gt;
+
+&lt;p&gt;　　上例中的test.outerHTML的值也就是&lt;code&gt;&amp;lt;div id=&quot;test&quot;&amp;gt;&amp;lt;span style=&quot;color:red&quot;&amp;gt;hello&amp;lt;/span&amp;gt; world!&amp;lt;/div&amp;gt;&lt;/code&gt;&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/07/01/js-innerHtml</link>
+                <guid>http://enml.github.io/blog/2013/07/01/js-innerHtml</guid>
+                <pubDate>2013-07-01T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>css：position(转)</title>
+                <description>&lt;h1&gt;css：position(转)&lt;/h1&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>http://enml.github.io/blog/2013/06/09/css-position</link>
+                <guid>http://enml.github.io/blog/2013/06/09/css-position</guid>
+                <pubDate>2013-06-09T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>javascript 算出某值以内的质数</title>
+                <description>&lt;h1&gt;javascript 算出某值以内的质数&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;pre class=&quot;prettyprint linenums&quot;&gt;
+    //算出 num 以内的所有质数
+ 
+function prime(num){
+    var list = [];
+    for(var i = 2; i &lt;= num; i++){ list.push(i); } //create a Array
+    
+    for(var i = 0; i &lt; list.length; i++){
+        for(var j = 2; j &lt; list[i]; j++){
+            if(list[i] % j == 0){
+                list.splice(i,1); //delete the non prime number.it will change the index of other elements
+                j = 2; //由于splice导致list[i+1]的index变为i,因此把j置为2以便对list[i+1]进行重新计算
+        }
+    }
+}
+&lt;/pre&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2013/05/12/prime</link>
+                <guid>http://enml.github.io/blog/2013/05/12/prime</guid>
+                <pubDate>2013-05-12T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>jekyll加载图片的路径问题</title>
+                <description>&lt;h1&gt;jekyll加载图片的路径问题&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;　一开始使用根目录&lt;code&gt;/assets/…/img/bg.png&lt;/code&gt;的方式，在localhost调试成功，但在github pages失败。
+　后来试了一下当前目录方式&lt;code&gt;./img/bg.png&lt;/code&gt;成功。也可以用&lt;code&gt;img/bg.png&lt;/code&gt;表示当前目录。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2012/12/24/directory</link>
+                <guid>http://enml.github.io/blog/2012/12/24/directory</guid>
+                <pubDate>2012-12-24T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>解决invalid byte sequence in GBK</title>
+                <description>&lt;h1&gt;解决invalid byte sequence in GBK&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;　jekyll对中文的支持不太好，导致经常出现乱码甚至无法运行&lt;code&gt;jekyll server&lt;/code&gt;命令。解决post内容乱码问题可以通过修改convertible.rb文件的第27行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;self.content = File.read(File.join(base, name));
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;为&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;self.content = File.read(File.join(base, name), :encoding =&amp;gt; &quot;utf-8&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　原因File.read()可能采用系统默认编码读取文件，中文系统为GBK，但markdown文件均为utf-8编码，所以导致无法正确展现中文。&lt;/p&gt;
+
+&lt;!--break--&gt;
+
+
+&lt;p&gt;　但是当我在post.html模板里面加入中文之后，&lt;code&gt;jekyll server&lt;/code&gt;命令直接报错。解决办法是在运行服务器前先运行&lt;code&gt;chcp 65001&lt;/code&gt;命令，即可解决。在官方找到的解决办法&lt;strong&gt;Windows users: run chcp 65001 first to change the command prompt&#39;s character encoding (code page) to UTF-8 so Jekyll runs without errors.&lt;/strong&gt;&lt;/p&gt;
+</description>
+                <link>http://enml.github.io/blog/2012/12/23/chinese-messy-code</link>
+                <guid>http://enml.github.io/blog/2012/12/23/chinese-messy-code</guid>
+                <pubDate>2012-12-23T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>对5天来关于jekyll的心得</title>
+                <description>&lt;h1&gt;完成基于jekyll的第一个blog&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;　今天差不多把blog完成了，这是我第一个基于jekyll的blog，定制了主题，修改了相关配置，以及解决了中文bug。现在把这5天的心得分享一下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;首先是中文问题，这个困扰我了很久，也花费了不少时间，不过最后总算找到解决办法。给我最大的感触就是，即使碰壁，也得硬着头皮找下去，如果放弃，那就前功尽弃了。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;!--break--&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;然后是关于bootstrap，因为主题是基于bootstrap，所以这几天对bootstrap也有了深入的了解。Less预编译的思想其实挺方便的，只不过先前习惯了直接div+css的方式后一时难以习惯，但是，习惯是用来打破，不打破那永远都进不了步。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;@media通过检测min-width和max-width来进行响应式布局，但要编写全局css时要注意，否则很容易响应不了。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;\&lt;hr&gt; 添加个具有margin的hr，然后在使用card style时可以通过添加hr来达到分割的效果。另一种方式是直接为card添加一个margin-top。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;当我使用中文的categories时，由于permalink中包含categories，导致链接失败。所以只要到_config.yml中修改permalink即可。&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2012/12/21/finish-jekyll</link>
+                <guid>http://enml.github.io/blog/2012/12/21/finish-jekyll</guid>
+                <pubDate>2012-12-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>install jekyll 流程</title>
+                <description>&lt;h1&gt;install jekyll 流程&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;首先下载&lt;code&gt;ruby&lt;/code&gt;&lt;a href=&quot;http://rubyinstaller.org/downloads/&quot;&gt;安装ruby download&lt;/a&gt; ，然后下载&lt;strong&gt;DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe&lt;/strong&gt;。安装完&lt;code&gt;ruby&lt;/code&gt;后，再安装&lt;code&gt;rubyGems&lt;/code&gt;:运行&lt;code&gt;gem update --system&lt;/code&gt;即可。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;解压DevKit，然后命令行cd到该目录，运行&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;!--break--&gt;
+
+
+&lt;pre&gt;&lt;code&gt; ruby dk.rb init
+ ruby dk.rb review 
+ ruby dk.rb install
+ gem install rdiscount --platform=ruby
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;DevKit安装完后，即可安装jekyll：&lt;code&gt;gem install jekyll&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>http://enml.github.io/blog/2012/12/17/install-jekyll</link>
+                <guid>http://enml.github.io/blog/2012/12/17/install-jekyll</guid>
+                <pubDate>2012-12-17T00:00:00+08:00</pubDate>
+        </item>
+
+
+</channel>
+</rss>

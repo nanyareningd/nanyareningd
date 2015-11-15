@@ -1,0 +1,365 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>javascript——作用域</title>
+    
+    <meta name="author" content="陈佳伟">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/site/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/site/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+    <link href="/site/assets/themes/twitter/css/prettify.css" rel="stylesheet" type="text/css">
+    <script src="/site/assets/themes/twitter/js/prettify.js"></script>    <script src="/site/assets/themes/twitter/js/scrollHandler.js" defer="true"></script>
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="/site/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/site/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+    
+<!--    font-awesome-->
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  </head>
+
+  <body onload="prettyPrint()">
+    <div class="navbar">
+      <div class="navbar-inner">
+       <div class="nav-narrow">
+          <a class="brand" href="/site"><span class="fa fa-mortar-board (alias)">寂寞先生</span></a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/site/archive.html">文章</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/site/categories.html">分类</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/site/pages.html">页面</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/site/tags.html">标签</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<!--
+<div class="page-header">
+  <h1>深入javascript——作用域和闭包 <small>Supporting tagline</small></h1>
+</div>
+-->
+ 
+
+<div class="row-fluid post-full">
+  <div class="span12 ">
+    <div class="content card">
+        <div class="date_label">
+          <div class="day_month">
+          06/12
+          </div>
+          <div class="year">
+          2013
+          </div>
+        </div>
+      <h1>javascript作用域</h1>
+
+<hr />
+
+<h3>作用域</h3>
+<p>作用域和作用域链是javascript中非常重要的特性，对于他们的理解直接关系到对于整个javascript体系的理解，而闭包又是对作用域的延伸，所以这两个概念对于深入理解javascript非常重要。
+</p>
+
+<p>作用域是一个变量和函数的作用范围，javascript中函数内声明的所有变量在函数体内始终是可见的，在javascript中有全局作用域和局部作用域，但是没有块级作用域，局部变量的优先级高于全局变量。</p>
+<h3>1. Hoisting</h3>
+
+<pre class="prettyprint linenums"> 
+var me="global";
+function scopeTest(){
+    console.log(me);
+    var me="local"  
+}
+scopeTest(); //undefined
+ </pre>
+<p>
+此处的输出是undefined，上面的函数等效于：</p>
+
+<pre class="prettyprint linenums">
+var me="global";
+function scopeTest(){
+    var me;
+    console.log(me);
+    me="local"  
+}
+scopeTest(); 
+ </pre>
+
+<p>注意，如果忘记var，那么变量就被声明为全局变量了。上面的例子还比较直观，下面这个初学者很容易忽略</p>
+<pre class="prettyprint linenums">
+    var num1 = 10;
+    function test(){
+        if(num1==10){
+            var num1 = 1;
+        }
+        else{
+            var num1 = 2;
+        }
+        return num1;
+    }
+    test(); //返回2
+</pre>
+<p>我一开始还没理解hoisting的时候，对这个例子百思不得其解。安装hoisting原则，var会将declaration进行hoist，但是definition并不会hoist。在<code>var num1 = 1</code>这句代码里面，其实包含了两个语句，第一个是declaration（也就是声明）：<code>var num1;</code>，第二个是definition（定义赋值）：<code>num1 = 1;</code>根据hoisting原则，声明会被hoist到当前作用域的顶端，但不会对定义hoist。因此在这个例子里面，函数test()的作用域里num1的值为undefined，不等于10，因此最后赋值为2.</p><br>
+
+<p>声明除了 <code>var</code>还有<code>function</code>，<code>function</code>的优先级高于<code>var</code>，因此这里又是一个容易犯错的地方：</p>
+<pre class="prettyprint linenums">
+alert(a);    //输出：function a(){ alert('我是函数') }
+
+function a(){ alert('我是函数') }
+var a = '我是变量';
+
+alert(a);   //输出：'我是变量'
+</pre>
+<p>根据hoisting原则，上面代码等同于：</p>
+<pre class="prettyprint linenums">
+function a(){};
+var a;
+
+alert(a);
+function a(){alert('我是函数')};
+a = '我是变量';
+
+alert(a);
+</pre>
+<code>function</code>和<code>var</code>都得到hoisting，但<code>function</code>比<code>var</code>优先级高，因此默认a为函数，第一个alert(a)弹出函数体。后来<code>a='我是变量'</code>改写了a，因此后一个alert(a)为'我是变量'。
+
+<h3>2. 没有块级作用域</h3><p>
+我们知道，在很多常见的语言里面，有一个很重要的概念就是<code>block scope</code>，但在Javascript中没有块级作用域</p>
+
+<pre class="prettyprint linenums"> 
+function scopeTest() {
+    var scope = {};
+    if (scope instanceof Object) {
+        var value1 = 1;
+        for (var i = 0; i < 10; i++) {
+                value1 += i;
+        }
+        console.log(value1); //输出46
+    }
+}
+ </pre>
+
+<p>在if这个代码块里的变量j可以在代码块外面访问到，for代码块里的i同样能在for外访问到，说明对于javascript来说，不存在所谓的<code>block scope</code>。 ps：其实我们可以通过构建闭包来模仿块级作用域
+</p>
+<pre class="prettyprint linenums"> 
+function scopeTest() {
+    var scope = {};
+    if (scope instanceof Object) {
+        var value1 = 1;
+        for (var i = 0; i < 10; i++) {
+            (function(value1){
+                value1 += i;
+            })(value1)
+        }
+        console.log(value1); //输出1.相当于for代码块拥有了自己的作用域，不影响外部的value1。
+    }
+}
+ </pre>
+
+<p>javascript只有<code>function scope</code>。下面代码说明了<code>function scope</code>的存在</p>
+
+<pre class="prettyprint linenums"> var scope = "hello";
+function scopeTest() {
+    console.log(scope);//undefined
+    var scope = "no";
+    console.log(scope);//no
+}
+ </pre>
+
+<p>这里等价于：</p>
+
+<pre class="prettyprint linenums"> var scope = "hello";
+function scopeTest() {
+    var scope;
+    console.log(scope);//undefined
+    scope = "no";
+    console.log(scope);//no
+}
+ </pre>
+
+<p>根据1所讲的<code>hoisting</code>以及2的<code>function scope</code>中全局变量优先级低于局部变量，我们可以理解第一个console为什么输出undefined了。</p>
+<br>
+<h3>作用域链</h3>
+
+<p>在javascript中，每个函数都有自己的context（我真的不想翻译成上下文），当代码在这个环境中执行时，会创建变量对象的作用域链，作用域链是一个对象列表或对象链，它保证了变量对象的有序访问。变量的查找会从第一个链的对象开始，如果对象中包含变量属性，那么就停止查找，如果没有就会继续向上级作用域链查找，直到找到全局对象中：</p>
+
+<ul>全局作用域:
+	<li>未使用var定义的变量。</li>
+	<li> 最外部的函数。</li>
+	<li>函数外定义的变量。</li>
+	<li>window对象（document）。</li> 
+	</ul>
+<p>作用域链的逐级查找，会影响到程序的性能，变量作用域链越长对性能影响越大，这也是我们尽量避免使用全局变量的一个主要原因。优化建议：</p><p>1. 尽量少用全局变量，当需要多次调用全局变量时，应该考虑缓存为局部变量；<br>2. 尽量避免改变作用域链。避免使用with；<br>3. 当无法避免改变作用域链时，应该尽可能少的使用第二层作用域甚至更底层的变量。例如try…catch
+
+</p>
+
+
+    </div>
+
+ 
+<!--
+    <ul class="tag_box inline ">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/site/categories.html#技术分享-ref">
+    		技术分享 <span>11</span>
+    	</a></li>
+    
+  
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline ">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/site/tags.html#javascript-ref">javascript <span>6</span></a></li>
+     
+    	<li><a href="/site/tags.html#算法-ref">算法 <span>2</span></a></li>
+    
+  
+
+
+
+    </ul>
+    -->
+    
+    <div class="pagination clearfix">
+      <ul class = "pull-right">
+      
+        <li class="prev"><a class="fa fa-arrow-circle-left" href="/site/2011/01/12/prime" title="js-算出某值以内的质数"> 前一篇</a></li>
+      
+        <li><a class="fa fa-th" href="/site/archive.html"> 所有日志</a></li>
+      
+        <li class="next"><a  href="/site/2014/04/21/future" title="后智能手机时代">后一篇 <span class="fa fa-arrow-circle-right">  </span></a></li>
+      
+      </ul>
+    </div>
+    
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+</div>
+
+
+      </div>
+      
+      <footer class="card clearfix">
+        <span style="font-size:30px;"class="fa fa-github pull-left"></span><a href="https://github.com/enml/blog/tree/jekyll-blog" style="display:inline-block;padding-right:80px;border-right:1px solid #bbb">fork me on GitHub</a>
+        <p class="pull-right">&copy; 2011 陈佳伟
+          with help from <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+        
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+
